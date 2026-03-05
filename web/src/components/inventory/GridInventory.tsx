@@ -102,7 +102,6 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
 
   const gridWidth = inventory.gridWidth ?? DEFAULT_GRID_DIMENSIONS[inventory.type]?.gridWidth ?? 10;
   const gridHeight = inventory.gridHeight ?? DEFAULT_GRID_DIMENSIONS[inventory.type]?.gridHeight ?? 5;
-
   const weight = useMemo(
     () => (inventory.maxWeight !== undefined ? Math.floor(getTotalWeight(inventory.items) * 1000) / 1000 : 0),
     [inventory.maxWeight, inventory.items]

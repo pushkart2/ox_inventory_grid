@@ -83,8 +83,8 @@ local defaultInventory = {
 	weight = 0,
 	maxWeight = shared.dropweight,
 	items = {},
-	gridWidth = 10,
-	gridHeight = 7,
+	gridWidth = shared.gridwidth or 10,
+	gridHeight = shared.gridheight or 7,
 }
 
 local searchableTypes = shared.searchable and {

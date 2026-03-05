@@ -109,7 +109,6 @@ function GridUtils.FindFirstFit(grid, gridWidth, gridHeight, w, h)
 end
 
 local dimensionDefaults = {
-    player = { 10, 7 },
     stash = { 10, 7 },
     trunk = { 8, 5 },
     glovebox = { 5, 2 },
