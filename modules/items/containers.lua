@@ -105,25 +105,25 @@ setContainerProperties('pizzabox', {
 	whitelist = { 'pizza' }
 })
 
-setBackpackProperties('backpack_small', {
-	slots = 10,
-	maxWeight = 5000,
-	gridWidth = 5,
-	gridHeight = 3,
-})
+-- setBackpackProperties('backpack_small', {
+-- 	slots = 10,
+-- 	maxWeight = 5000,
+-- 	gridWidth = 5,
+-- 	gridHeight = 3,
+-- })
 
-setBackpackProperties('backpack_medium', {
-	slots = 20,
-	maxWeight = 15000,
-	gridWidth = 6,
-	gridHeight = 4,
-})
+-- setBackpackProperties('backpack_medium', {
+-- 	slots = 20,
+-- 	maxWeight = 15000,
+-- 	gridWidth = 6,
+-- 	gridHeight = 4,
+-- })
 
-setBackpackProperties('backpack_large', {
-	slots = 30,
-	maxWeight = 30000,
-	gridWidth = 8,
-	gridHeight = 5,
-})
+-- setBackpackProperties('backpack_large', {
+-- 	slots = 30,
+-- 	maxWeight = 30000,
+-- 	gridWidth = 8,
+-- 	gridHeight = 5,
+-- })
 
 return { containers = containers, backpacks = backpacks }
