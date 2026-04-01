@@ -235,7 +235,17 @@ export const inventorySlice = createSlice({
         return;
       }
       const curTime = Date.now();
-      state.extraInventories.push(setupGridInventory(action.payload, curTime));
+      const processed = setupGridInventory(action.payload, curTime);
+      // If adding a real drop, replace the empty newdrop placeholder in-place
+      if (action.payload.type === 'drop') {
+        const newdropIdx = state.extraInventories.findIndex((inv) => inv.id === 'newdrop');
+        if (newdropIdx !== -1) {
+          state.extraInventories[newdropIdx] = processed;
+          console.log('[multi-inv:redux] replaced newdrop placeholder in-place');
+          return;
+        }
+      }
+      state.extraInventories.push(processed);
       console.log('[multi-inv:redux] added, new count:', state.extraInventories.length);
     },
     removeExtraInventory: (state, action: PayloadAction<string>) => {
@@ -269,6 +279,9 @@ export const inventorySlice = createSlice({
         state.rightInventory = state.history.rightInventory;
         if (state.history.backpackInventory) {
           state.backpackInventory = state.history.backpackInventory;
+        }
+        if (state.history.extraInventories) {
+          state.extraInventories = state.history.extraInventories;
         }
       }
       state.isBusy = false;

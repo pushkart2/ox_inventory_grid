@@ -2127,24 +2127,20 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
 	if not playerInventory then return end
 
-	local secondaryInventory
-	if data.toId and Inventories[data.toId] then
-		secondaryInventory = Inventories[data.toId]
-	elseif data.fromId and Inventories[data.fromId] and data.fromId ~= tostring(source) then
-		secondaryInventory = Inventories[data.fromId]
-	else
-		secondaryInventory = playerInventory.open and Inventories[playerInventory.open]
-	end
+	-- Resolve inventories independently by explicit ID
+	local fallbackSecondary = playerInventory.open and Inventories[playerInventory.open]
 
-	local function resolveInventory(invType)
+	local function resolveInventory(invType, invId)
 		if invType == 'player' then return playerInventory
 		elseif invType == 'backpack' then return playerInventory.openBackpack and Inventory(playerInventory.openBackpack)
-		else return secondaryInventory
+		else
+			if invId and Inventories[invId] then return Inventories[invId] end
+			return fallbackSecondary
 		end
 	end
 
-	local toInventory = resolveInventory(data.toType)
-	local fromInventory = resolveInventory(data.fromType)
+	local toInventory = resolveInventory(data.toType, data.toId)
+	local fromInventory = resolveInventory(data.fromType, data.fromId)
 
 	if not fromInventory or not toInventory then
 		if (data.fromType == 'backpack' and not fromInventory) or (data.toType == 'backpack' and not toInventory) then

@@ -78,6 +78,8 @@ local function canOpenTarget(ped)
 end
 
 local defaultInventory = {
+	id = 'newdrop',
+	label = 'Drop',
 	type = 'newdrop',
 	slots = shared.dropslots,
 	weight = 0,
@@ -387,7 +389,7 @@ function client.openInventory(inv, data)
 
     currentInventory.searchable = isSearchable
     currentInventory.unsearchedCount = unsearchedCount
-
+	print("triggered when opening stash?")
     SendNUIMessage({
         action = 'setupInventory',
         data = {
@@ -395,6 +397,53 @@ function client.openInventory(inv, data)
             rightInventory = currentInventory
         }
     })
+
+	Wait(100)
+
+    -- Always show a drop panel alongside any secondary inventory
+    if currentInventory.type ~= 'newdrop' and currentInventory.type ~= 'drop' then
+		print("Coming here?")
+        local playerCoords = GetEntityCoords(playerPed)
+        local nearbyDrop = nil
+
+        -- Check for an existing nearby drop to show instead of an empty placeholder
+        if client.drops then
+            local closestDist = 2.0
+            for dropId, point in pairs(client.drops) do
+                if point.coords then
+                    local dist = #(playerCoords - point.coords)
+                    if dist < closestDist then
+                        closestDist = dist
+                        nearbyDrop = dropId
+                    end
+                end
+            end
+        end
+		print(nearbyDrop)
+        if nearbyDrop then
+            -- Open existing nearby drop as extra panel
+            local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', nearbyDrop, true)
+            if dropRight and dropRight.id then
+                currentInventories[dropRight.id] = dropRight
+				print("Showing nearby drop:", dropRight.id)
+                SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
+            end
+        else
+            -- Show empty newdrop placeholder
+            local dropPlaceholder = {
+                id = 'newdrop',
+                label = locale('drops') or 'Drop',
+                type = 'newdrop',
+                slots = shared.dropslots,
+                weight = 0,
+                maxWeight = shared.dropweight,
+                items = {},
+                gridWidth = shared.gridwidth or 10,
+                gridHeight = shared.gridheight or 7,
+            }
+            SendNUIMessage({ action = 'addSecondaryInventory', data = dropPlaceholder })
+        end
+    end
 
     if not currentInventory.coords and not inv == 'container' then
         currentInventory.coords = GetEntityCoords(playerPed)
@@ -431,6 +480,16 @@ exports('openInventory', client.openInventory)
 
 RegisterNetEvent('ox_inventory:forceOpenInventory', function(left, right)
 	if source == '' then return end
+
+	-- If inventory is already open, add as extra panel instead of replacing
+	if invOpen and right and right.id then
+		if not currentInventories[right.id] then
+			currentInventories[right.id] = right
+			currentInventory = right
+			SendNUIMessage({ action = 'addSecondaryInventory', data = right })
+		end
+		return
+	end
 
 	plyState.invOpen = true
 
@@ -501,6 +560,51 @@ RegisterNetEvent('ox_inventory:forceOpenInventory', function(left, right)
 			rightInventory = currentInventory
 		}
 	})
+
+	-- Always show a drop panel alongside any secondary inventory
+    if currentInventory.type ~= 'newdrop' and currentInventory.type ~= 'drop' then
+		print("Coming here?")
+        local playerCoords = GetEntityCoords(playerPed)
+        local nearbyDrop = nil
+
+        -- Check for an existing nearby drop to show instead of an empty placeholder
+        if client.drops then
+            local closestDist = 2.0
+            for dropId, point in pairs(client.drops) do
+                if point.coords then
+                    local dist = #(playerCoords - point.coords)
+                    if dist < closestDist then
+                        closestDist = dist
+                        nearbyDrop = dropId
+                    end
+                end
+            end
+        end
+		print(nearbyDrop)
+        if nearbyDrop then
+            -- Open existing nearby drop as extra panel
+            local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', nearbyDrop, true)
+            if dropRight and dropRight.id then
+                currentInventories[dropRight.id] = dropRight
+				print("Showing nearby drop:", dropRight.id)
+                SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
+            end
+        else
+            -- Show empty newdrop placeholder
+            local dropPlaceholder = {
+                id = 'newdrop',
+                label = locale('drops') or 'Drop',
+                type = 'newdrop',
+                slots = shared.dropslots,
+                weight = 0,
+                maxWeight = shared.dropweight,
+                items = {},
+                gridWidth = shared.gridwidth or 10,
+                gridHeight = shared.gridheight or 7,
+            }
+            SendNUIMessage({ action = 'addSecondaryInventory', data = dropPlaceholder })
+        end
+    end
 end)
 
 local Animations = lib.load('data.animations')
@@ -1297,7 +1401,18 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
 
 		if invOpen and #(GetEntityCoords(playerPed) - data.coords) <= 1 then
 			if not cache.vehicle then
-				client.openInventory('drop', dropId)
+				-- If a secondary inventory is already open, add drop as extra panel
+				if currentInventory and next(currentInventories) then
+					-- Remove the newdrop placeholder if present, replace with real drop
+					SendNUIMessage({ action = 'removeSecondaryInventory', data = 'newdrop' })
+					local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', dropId, true)
+					if dropRight and dropRight.id then
+						currentInventories[dropRight.id] = dropRight
+						SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
+					end
+				else
+					client.openInventory('drop', dropId)
+				end
 			elseif currentInventory then
 				SendNUIMessage({
 					action = 'setupInventory',

@@ -209,7 +209,10 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
 
           const shiftHalf = event.shiftKey && item.count > 1 ? Math.floor(item.count / 2) : null;
           const moveCount = activeSplit ?? shiftHalf ?? item.count;
-          const sourceInv = isLeft ? state.leftInventory : state.rightInventory;
+          const sourceInv = isLeft ? state.leftInventory
+            : isBackpack ? state.backpackInventory
+            : inventoryId === state.rightInventory.id ? state.rightInventory
+            : state.extraInventories.find((inv) => inv.id === inventoryId) ?? state.rightInventory;
           let maxSlot = 0;
           for (const i of sourceInv.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
           for (const i of targetInv.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
@@ -224,6 +227,8 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
             toGridX: fit.x,
             toGridY: fit.y,
             rotated: fit.rotated,
+            fromId: sourceInv.id,
+            toId: targetInv.id,
           }) as any);
 
           dispatch(gridMoveSlots({
@@ -235,6 +240,8 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
             toGridX: fit.x,
             toGridY: fit.y,
             rotated: fit.rotated,
+            sourceId: sourceInv.id,
+            targetId: targetInv.id,
           }));
 
           if (activeSplit) dispatch(clearSplit());

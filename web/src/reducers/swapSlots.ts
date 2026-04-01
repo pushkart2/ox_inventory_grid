@@ -9,10 +9,12 @@ export const swapSlotsReducer: CaseReducer<
     fromType: Inventory['type'];
     toSlot: SlotWithItem;
     toType: Inventory['type'];
+    sourceId?: string;
+    targetId?: string;
   }>
 > = (state, action) => {
-  const { fromSlot, fromType, toSlot, toType } = action.payload;
-  const { sourceInventory, targetInventory } = getTargetInventory(state, fromType, toType);
+  const { fromSlot, fromType, toSlot, toType, sourceId, targetId } = action.payload;
+  const { sourceInventory, targetInventory } = getTargetInventory(state, fromType, toType, sourceId, targetId);
   const curTime = Math.floor(Date.now() / 1000);
 
   [sourceInventory.items[fromSlot.slot - 1], targetInventory.items[toSlot.slot - 1]] = [

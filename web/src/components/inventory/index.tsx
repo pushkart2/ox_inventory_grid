@@ -33,10 +33,8 @@ const Inventory: React.FC = () => {
   const rightInventory = useAppSelector(selectRightInventory);
   const hasRightInventory = useMemo(() => {
     if (rightInventory.type === '' || rightInventory.id === '') return false;
-    if ((rightInventory.type === 'drop' || rightInventory.type === 'newdrop') &&
-        !rightInventory.items.some((item) => item != null && isSlotWithItem(item))) return false;
     return true;
-  }, [rightInventory.type, rightInventory.id, rightInventory.items]);
+  }, [rightInventory.type, rightInventory.id]);
 
   const backpackInventory = useAppSelector(selectBackpackInventory);
   const hasBackpack = useMemo(() =>
@@ -254,7 +252,7 @@ const Inventory: React.FC = () => {
             )}
           </div>
           {extraInventories.map((inv, i) => (
-            <ExtraInventory key={inv.id} inventory={inv} index={i} />
+            <ExtraInventory key={(inv.type === 'drop' || inv.type === 'newdrop') ? 'drop-panel' : inv.id} inventory={inv} index={i} />
           ))}
           <Tooltip />
           <InventoryContext />

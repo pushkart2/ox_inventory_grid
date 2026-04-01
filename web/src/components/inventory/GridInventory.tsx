@@ -363,7 +363,9 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
           ? reduxState.leftInventory
           : source.inventoryId === reduxState.backpackInventory.id
           ? reduxState.backpackInventory
-          : reduxState.rightInventory;
+          : source.inventoryId === reduxState.rightInventory.id
+          ? reduxState.rightInventory
+          : reduxState.extraInventories.find((inv) => inv.id === source.inventoryId) ?? reduxState.rightInventory;
       const sourceItem = sourceInv.items.find((i) => i != null && i.slot === source.item.slot);
       if (!sourceItem || !isSlotWithItem(sourceItem)) return;
 
@@ -478,6 +480,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
               toGridX: cursorTarget.gridX ?? anchorX,
               toGridY: cursorTarget.gridY ?? anchorY,
               rotated: cursorTarget.rotated ?? false,
+              fromId: sourceInv.id,
+              toId: inventory.id,
             }) as any
           );
           dispatch(
@@ -487,6 +491,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
               toSlot: cursorTarget,
               toType: targetType,
               count: stackCount,
+              sourceId: sourceInv.id,
+              targetId: inventory.id,
             })
           );
           return;
@@ -519,6 +525,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
             toGridX: anchorX,
             toGridY: anchorY,
             rotated: dragRotated,
+            fromId: sourceInv.id,
+            toId: inventory.id,
           }) as any
         );
 
@@ -532,6 +540,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
             toGridX: anchorX,
             toGridY: anchorY,
             rotated: dragRotated,
+            sourceId: sourceInv.id,
+            targetId: inventory.id,
           })
         );
       } else if (!hasEmptyCells && occupiedSlots.size === 1) {
@@ -574,6 +584,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
                 toGridY: targetItem.gridY ?? anchorY,
                 rotated: dragRotated,
                 targetRotated: displacedRotated,
+                fromId: sourceInv.id,
+                toId: inventory.id,
               }) as any
             );
             dispatch(
@@ -584,6 +596,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
                 toType: targetType,
                 dragRotated: dragRotated,
                 rotateTarget: swapResult.rotateTarget,
+                sourceId: sourceInv.id,
+                targetId: inventory.id,
               })
             );
           }

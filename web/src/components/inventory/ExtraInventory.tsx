@@ -14,7 +14,10 @@ const PANEL_WIDTH = 370;
 const PANEL_GAP = 8;
 
 const ExtraInventory: React.FC<Props> = ({ inventory, index }) => {
-  const storageKey = `ox_inv_panel_extra_${inventory.id}`;
+  // Use stable key for drop panels so position persists when newdrop → real drop
+  const storageKey = (inventory.type === 'drop' || inventory.type === 'newdrop')
+    ? 'ox_inv_panel_extra_drop'
+    : `ox_inv_panel_extra_${inventory.id}`;
   const drag = usePanelDrag(storageKey);
   const [focusedLocal, setFocusedLocal] = useState(false);
 

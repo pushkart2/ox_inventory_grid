@@ -40,16 +40,24 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
     Object.values(action.payload.items)
       .filter((data) => !!data)
       .forEach((data) => {
-        const targetInventory = data.inventory
-          ? data.inventory === InventoryType.PLAYER || data.inventory === state.leftInventory.id
-            ? state.leftInventory
-            : data.inventory === InventoryType.BACKPACK || (state.backpackInventory.id && data.inventory === state.backpackInventory.id)
-            ? state.backpackInventory
-            : state.rightInventory
-          : state.leftInventory;
+        let targetInventory: typeof state.leftInventory;
+        if (!data.inventory) {
+          targetInventory = state.leftInventory;
+        } else if (data.inventory === InventoryType.PLAYER || data.inventory === state.leftInventory.id) {
+          targetInventory = state.leftInventory;
+        } else if (data.inventory === InventoryType.BACKPACK || (state.backpackInventory.id && data.inventory === state.backpackInventory.id)) {
+          targetInventory = state.backpackInventory;
+        } else if (data.inventory === state.rightInventory.id || data.inventory === state.rightInventory.type) {
+          targetInventory = state.rightInventory;
+        } else {
+          const extra = state.extraInventories.find((inv) => inv.id === data.inventory);
+          targetInventory = extra ?? state.rightInventory;
+        }
 
         const invKey = targetInventory === state.leftInventory ? 'left'
-          : targetInventory === state.backpackInventory ? 'backpack' : 'right';
+          : targetInventory === state.backpackInventory ? 'backpack'
+          : targetInventory === state.rightInventory ? 'right'
+          : `extra_${targetInventory.id}`;
 
         data.item.durability = itemDurability(data.item.metadata, curTime);
 
@@ -145,6 +153,7 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
   if (action.payload.weightData) {
     const inventoryId = action.payload.weightData.inventoryId;
     const inventoryMaxWeight = action.payload.weightData.maxWeight;
+    const extraIdx = state.extraInventories.findIndex((inv) => inv.id === inventoryId);
     const inv =
       inventoryId === state.leftInventory.id
         ? 'leftInventory'
@@ -152,16 +161,23 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
         ? 'rightInventory'
         : inventoryId === state.backpackInventory.id
         ? 'backpackInventory'
+        : extraIdx !== -1
+        ? ('extra' as const)
         : null;
 
     if (!inv) return;
 
-    state[inv].maxWeight = inventoryMaxWeight;
+    if (inv === 'extra') {
+      state.extraInventories[extraIdx].maxWeight = inventoryMaxWeight;
+    } else {
+      state[inv].maxWeight = inventoryMaxWeight;
+    }
   }
 
   if (action.payload.slotsData) {
     const { inventoryId } = action.payload.slotsData;
     const { slots } = action.payload.slotsData;
+    const extraIdx = state.extraInventories.findIndex((inv) => inv.id === inventoryId);
 
     const inv =
       inventoryId === state.leftInventory.id
@@ -170,9 +186,12 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
         ? 'rightInventory'
         : inventoryId === state.backpackInventory.id
         ? 'backpackInventory'
+        : extraIdx !== -1
+        ? ('extra' as const)
         : null;
 
     if (!inv) return;
+    if (inv === 'extra') return; // extra inventories don't need slot re-setup
 
     state[inv].slots = slots;
     inventorySlice.caseReducers.setupInventory(state, {

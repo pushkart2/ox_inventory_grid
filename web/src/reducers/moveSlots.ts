@@ -10,10 +10,12 @@ export const moveSlotsReducer: CaseReducer<
     toSlot: Slot;
     toType: Inventory['type'];
     count: number;
+    sourceId?: string;
+    targetId?: string;
   }>
 > = (state, action) => {
-  const { fromSlot, fromType, toSlot, toType, count } = action.payload;
-  const { sourceInventory, targetInventory } = getTargetInventory(state, fromType, toType);
+  const { fromSlot, fromType, toSlot, toType, count, sourceId, targetId } = action.payload;
+  const { sourceInventory, targetInventory } = getTargetInventory(state, fromType, toType, sourceId, targetId);
   const pieceWeight = fromSlot.weight / fromSlot.count;
   const curTime = Math.floor(Date.now() / 1000);
   const fromItem = sourceInventory.items[fromSlot.slot - 1];

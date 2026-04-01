@@ -54,6 +54,8 @@ export const onDrop = (source: DragSource, target?: DropTarget) => {
     fromType: sourceInventory.type,
     toType: targetInventory.type,
     count: count,
+    sourceId: sourceInventory.id,
+    targetId: targetInventory.id,
   };
 
   store.dispatch(
