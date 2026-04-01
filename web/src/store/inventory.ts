@@ -26,6 +26,7 @@ const initialState: State = {
   leftInventory: { ...emptyInventory },
   rightInventory: { ...emptyInventory },
   backpackInventory: { ...emptyInventory },
+  extraInventories: [] as Inventory[],
   additionalMetadata: new Array(),
   itemAmount: 0,
   shiftPressed: false,
@@ -227,6 +228,22 @@ export const inventorySlice = createSlice({
       const item = state.rightInventory.items.find((i) => i != null && i.slot === action.payload);
       if (item) item.searched = true;
     },
+    addExtraInventory: (state, action: PayloadAction<Inventory>) => {
+      console.log('[multi-inv:redux] addExtraInventory:', action.payload.id, action.payload.type, 'existing count:', state.extraInventories.length);
+      if (state.extraInventories.some((inv) => inv.id === action.payload.id)) {
+        console.log('[multi-inv:redux] skipping duplicate:', action.payload.id);
+        return;
+      }
+      const curTime = Date.now();
+      state.extraInventories.push(setupGridInventory(action.payload, curTime));
+      console.log('[multi-inv:redux] added, new count:', state.extraInventories.length);
+    },
+    removeExtraInventory: (state, action: PayloadAction<string>) => {
+      state.extraInventories = state.extraInventories.filter((inv) => inv.id !== action.payload);
+    },
+    clearExtraInventories: (state) => {
+      state.extraInventories = [];
+    },
   },
   extraReducers: (builder) => {
     const isNonCraftingPending = (action: any) => isPending(action) && !action.type.startsWith('crafting/');
@@ -240,6 +257,7 @@ export const inventorySlice = createSlice({
         leftInventory: current(state.leftInventory),
         rightInventory: current(state.rightInventory),
         backpackInventory: current(state.backpackInventory),
+        extraInventories: current(state.extraInventories),
       };
     });
     builder.addMatcher(isNonCraftingFulfilled, (state) => {
@@ -291,6 +309,9 @@ export const {
   attachComponentToWeapon,
   beginItemSearch,
   finishItemSearch,
+  addExtraInventory,
+  removeExtraInventory,
+  clearExtraInventories,
 } = inventorySlice.actions;
 export const selectLeftInventory = (state: RootState) => state.inventory.leftInventory;
 export const selectRightInventory = (state: RootState) => state.inventory.rightInventory;

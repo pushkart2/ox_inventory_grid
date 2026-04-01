@@ -10,6 +10,7 @@ export type State = {
   leftInventory: Inventory;
   rightInventory: Inventory;
   backpackInventory: Inventory;
+  extraInventories: Inventory[];
   itemAmount: number;
   shiftPressed: boolean;
   isBusy: boolean;
@@ -18,6 +19,7 @@ export type State = {
     leftInventory: Inventory;
     rightInventory: Inventory;
     backpackInventory: Inventory;
+    extraInventories: Inventory[];
   };
   dragRotated: boolean;
   hotbar: (number | null)[];

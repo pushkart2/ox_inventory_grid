@@ -9,7 +9,13 @@ import { Items } from '../store/items';
 export const onDrop = (source: DragSource, target?: DropTarget) => {
   const { inventory: state } = store.getState();
 
-  const { sourceInventory, targetInventory } = getTargetInventory(state, source.inventory, target?.inventory);
+  const { sourceInventory, targetInventory } = getTargetInventory(
+    state,
+    source.inventory,
+    target?.inventory,
+    source.inventoryId,
+    target?.inventoryId,
+  );
   const sourceSlot = (isGridInventory(sourceInventory.type)
     ? sourceInventory.items.find((i) => i != null && i.slot === source.item.slot)
     : sourceInventory.items[source.item.slot - 1]) as SlotWithItem;
@@ -55,6 +61,8 @@ export const onDrop = (source: DragSource, target?: DropTarget) => {
       ...data,
       fromSlot: sourceSlot.slot,
       toSlot: targetSlot.slot,
+      fromId: sourceInventory.id,
+      toId: targetInventory.id,
     })
   );
 

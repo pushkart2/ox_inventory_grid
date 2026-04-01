@@ -15,6 +15,8 @@ export const validateMove = createAsyncThunk(
       toGridY?: number;
       rotated?: boolean;
       targetRotated?: boolean;
+      fromId?: string;
+      toId?: string;
     },
     { rejectWithValue, dispatch }
   ) => {

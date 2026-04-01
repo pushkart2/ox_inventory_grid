@@ -7,6 +7,8 @@ local GridUtils = require 'modules.inventory.gridutils'
 local Inventories = {}
 
 ---@class OxInventory
+---@field openedBy table<any, boolean>
+---@field set fun(self: OxInventory, k: string, v: any)
 local OxInventory = {}
 OxInventory.__index = OxInventory
 
@@ -22,6 +24,8 @@ function OxInventory:openInventory(inv)
 	inv:set('open', true)
 	inv.openedBy[self.id] = true
 	self.open = inv.id
+	if not self.openList then self.openList = {} end
+	self.openList[inv.id] = true
 
 	TriggerEvent('ox_inventory:openedInventory', self.id, inv.id)
 end
@@ -56,6 +60,9 @@ function OxInventory:closeInventory(noEvent, keepBackpack)
 	inv.openedBy[self.id] = nil
 	inv:set('open', false)
 	self.open = false
+	if self.openList then
+		self.openList[inv.id] = nil
+	end
 	self.currentShop = nil
 	self.containerSlot = nil
 
@@ -2012,6 +2019,8 @@ local TriggerEventHooks = require 'modules.hooks.server'
 ---@field instance any
 ---@field fromType string
 ---@field toType string
+---@field fromId? any
+---@field toId? any
 ---@field coords? vector3
 ---@field toGridX? number
 ---@field toGridY? number
@@ -2118,10 +2127,19 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
 	if not playerInventory then return end
 
+	local secondaryInventory
+	if data.toId and Inventories[data.toId] then
+		secondaryInventory = Inventories[data.toId]
+	elseif data.fromId and Inventories[data.fromId] and data.fromId ~= tostring(source) then
+		secondaryInventory = Inventories[data.fromId]
+	else
+		secondaryInventory = playerInventory.open and Inventories[playerInventory.open]
+	end
+
 	local function resolveInventory(invType)
 		if invType == 'player' then return playerInventory
 		elseif invType == 'backpack' then return playerInventory.openBackpack and Inventory(playerInventory.openBackpack)
-		else return Inventory(playerInventory.open)
+		else return secondaryInventory
 		end
 	end
 
@@ -3509,14 +3527,40 @@ end)
 RegisterServerEvent('ox_inventory:closeInventory', function()
 	local inventory = Inventories[source]
 
-	if inventory?.open then
-		local secondary = Inventories[inventory.open]
+	if not inventory then return end
 
-		if secondary then
-			secondary:closeInventory()
+	if inventory.openList then
+		for invId in pairs(inventory.openList) do
+			local secondary = Inventories[invId]
+			if secondary then
+				secondary.openedBy[source] = nil
+				secondary:set('open', false)
+				TriggerEvent('ox_inventory:closedInventory', source, invId)
+			end
 		end
+		inventory.openList = {}
+	elseif inventory.open then
+		local secondary = Inventories[inventory.open]
+		if secondary then secondary:closeInventory() end
+	end
 
-		inventory:closeInventory(true)
+	inventory:closeInventory(true)
+end)
+
+RegisterServerEvent('ox_inventory:closeSpecificInventory', function(invId)
+	local playerInv = Inventories[source]
+	if not playerInv then return end
+	local secondary = Inventories[invId]
+	if secondary then
+		secondary.openedBy[source] = nil
+		secondary:set('open', false)
+		TriggerEvent('ox_inventory:closedInventory', source, invId)
+	end
+	if playerInv.openList then
+		playerInv.openList[invId] = nil
+	end
+	if playerInv.open == invId then
+		playerInv.open = (playerInv.openList and next(playerInv.openList)) or false
 	end
 end)
 

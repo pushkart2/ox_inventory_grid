@@ -14,6 +14,7 @@ export type DragSource = {
 export type DropTarget = {
   item: Pick<Slot, 'slot'>;
   inventory: Inventory['type'];
+  inventoryId?: string;
   gridX?: number;
   gridY?: number;
 };

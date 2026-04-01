@@ -80,52 +80,38 @@ const InventoryContext: React.FC = () => {
           const dropCount = contextMenu.splitAmount ?? item.count;
           const sourceInv = invState.leftInventory.items.some((i) => i != null && i.slot === item.slot)
             ? invState.leftInventory
+            : invState.backpackInventory.items.some((i) => i != null && i.slot === item.slot)
+            ? invState.backpackInventory
             : invState.rightInventory;
-          const targetInv = sourceInv === invState.leftInventory
-            ? invState.rightInventory
-            : invState.leftInventory;
 
-          if (isGridInventory(sourceInv.type) && isGridInventory(targetInv.type)) {
-            const itemSizes: Record<string, ItemSize | undefined> = {};
-            for (const [name, d] of Object.entries(Items)) {
-              if (d) itemSizes[name] = { width: d.width ?? 1, height: d.height ?? 1 };
-            }
-            const gw = targetInv.gridWidth ?? 10;
-            const gh = targetInv.gridHeight ?? 5;
-            const occupancy = buildOccupancyGrid(gw, gh, targetInv.items, itemSizes);
-            const size = getItemSize(item.name, itemSizes);
-            const fit = findFirstFit(occupancy, gw, gh, size.width, size.height);
-            if (!fit) return;
+          // Check if there's an open drop inventory to drop into
+          const openDrop =
+            (invState.rightInventory.type === 'drop' && invState.rightInventory.id) ? invState.rightInventory :
+            invState.extraInventories.find((inv) => inv.type === 'drop' && inv.id);
 
-            const uniqueToSlot = Math.max(
-              ...sourceInv.items.filter((i) => i != null).map((i) => i.slot),
-              ...targetInv.items.filter((i) => i != null).map((i) => i.slot),
-              0
-            ) + 1;
-
-            dispatch(validateMove({
-              fromSlot: item.slot,
-              fromType: sourceInv.type,
-              toSlot: uniqueToSlot,
-              toType: targetInv.type,
-              count: dropCount,
-              toGridX: fit.x,
-              toGridY: fit.y,
-              rotated: fit.rotated,
-            }) as any);
-
-            dispatch(gridMoveSlots({
-              fromSlot: item,
-              fromType: sourceInv.type,
-              toType: targetInv.type,
-              toSlotId: uniqueToSlot,
-              count: dropCount,
-              toGridX: fit.x,
-              toGridY: fit.y,
-              rotated: fit.rotated,
-            }));
+          if (openDrop) {
+            // Drop into existing open drop inventory
+            dispatch(
+              validateMove({
+                fromType: sourceInv.type,
+                fromSlot: item.slot,
+                toType: openDrop.type,
+                toId: openDrop.id,
+                toSlot: 0,
+                count: dropCount,
+              })
+            );
           } else {
-            onDrop({ item: item, inventory: 'player' });
+            // No open drop — create a new one
+            dispatch(
+              validateMove({
+                fromType: sourceInv.type,
+                fromSlot: item.slot,
+                toType: 'newdrop',
+                toSlot: 0,
+                count: dropCount,
+              })
+            );
           }
         }
         break;

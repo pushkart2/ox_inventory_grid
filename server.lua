@@ -116,13 +116,17 @@ end
 ---@param data? string|number|table
 ---@param ignoreSecurityChecks boolean?
 ---@return table | false | nil, table | false | nil, string?
-local function openInventory(source, invType, data, ignoreSecurityChecks)
+local function openInventory(source, invType, data, ignoreSecurityChecks, addToExisting)
 	if Inventory.Lock then return false end
 
 	local left = Inventory(source)
 	local right, closestCoords
 
     if not left then return end
+
+    print(('[multi-inv:server] openInventory called: source=%s, invType=%s, addToExisting=%s, currentOpen=%s'):format(
+        tostring(source), tostring(invType), tostring(addToExisting), tostring(left.open)
+    ))
 
     if invType == 'player' and data == source then
         data = nil
@@ -136,7 +140,12 @@ local function openInventory(source, invType, data, ignoreSecurityChecks)
         end
     end
 
-    left:closeInventory(true, true)
+    if not addToExisting then
+        print(('[multi-inv:server] closing existing inventory before opening new one'))
+        left:closeInventory(true, true)
+    else
+        print(('[multi-inv:server] addToExisting=true, skipping closeInventory'))
+    end
 	Inventory.CloseAll(left, source)
 
     local playerPed = left.player.ped
@@ -303,7 +312,7 @@ end
 ---@param source number
 ---@param invType string
 ---@param data string|number|table
-lib.callback.register('ox_inventory:openInventory', function(source, invType, data)
+lib.callback.register('ox_inventory:openInventory', function(source, invType, data, addToExisting)
     if invType == 'player' and source ~= data then
         local serverId = type(data) == 'table' and data.id or data
 
@@ -318,7 +327,7 @@ lib.callback.register('ox_inventory:openInventory', function(source, invType, da
         if not isPolice and not isTargetStealable then return end
     end
 
-    return openInventory(source, invType, data)
+    return openInventory(source, invType, data, nil, addToExisting)
 end)
 
 ---@param slot number The player inventory slot containing the backpack item

@@ -106,28 +106,31 @@ local searchConfig = {
 
 local skipSearchForDrop = nil
 
-local currentInventory = defaultInventory
+local currentInventories = {}  -- keyed by inventory ID: { [id] = inventoryData }
+local currentInventory = nil   -- backwards compat helper: the first/most recent secondary
 
 local function closeTrunk()
-	if currentInventory?.type == 'trunk' then
-		local coords = GetEntityCoords(playerPed, true)
-		---@todo animation for vans?
-		Utils.PlayAnimAdvanced(0, 'anim@heists@fleeca_bank@scope_out@return_case', 'trevor_action', coords.x, coords.y, coords.z, 0.0, 0.0, GetEntityHeading(playerPed), 2.0, 2.0, 1000, 49, 0.25)
+	for _, inv in pairs(currentInventories) do
+		if inv.type == 'trunk' then
+			local coords = GetEntityCoords(playerPed, true)
+			---@todo animation for vans?
+			Utils.PlayAnimAdvanced(0, 'anim@heists@fleeca_bank@scope_out@return_case', 'trevor_action', coords.x, coords.y, coords.z, 0.0, 0.0, GetEntityHeading(playerPed), 2.0, 2.0, 1000, 49, 0.25)
 
-		local entity = currentInventory.entity
-		local door = currentInventory.door
+			local entity = inv.entity
+			local door = inv.door
 
-		CreateThread(function()
-			Wait(900)
+			CreateThread(function()
+				Wait(900)
 
-			if type(door) == 'table' then
-				for i = 1, #door do
-					SetVehicleDoorShut(entity, door[i], false)
+				if type(door) == 'table' then
+					for i = 1, #door do
+						SetVehicleDoorShut(entity, door[i], false)
+					end
+				else
+					SetVehicleDoorShut(entity, door, false)
 				end
-			else
-				SetVehicleDoorShut(entity, door, false)
-			end
-		end)
+			end)
+		end
 	end
 end
 
@@ -140,24 +143,64 @@ local Inventory = require 'modules.inventory.client'
 ---@return boolean?
 function client.openInventory(inv, data)
 	if invOpen then
-		if not inv and currentInventory.type == 'newdrop' then
+		if not inv and currentInventory and currentInventory.type == 'newdrop' then
 			return client.closeInventory()
 		end
 
 		if IsNuiFocused() then
-			if inv == 'container' and currentInventory.id == PlayerData.inventory[data].metadata.container then
+			-- Toggle close if re-opening the same container
+			if inv == 'container' and currentInventory and currentInventory.id == PlayerData.inventory[data].metadata.container then
+				print(('[multi-inv] toggle-close same container: %s'):format(currentInventory.id))
 				return client.closeInventory()
 			end
 
-			if currentInventory.type == 'drop' and (not data or currentInventory.id == (type(data) == 'table' and data.id or data)) then
+			-- Toggle close if re-opening the same drop
+			if currentInventory and currentInventory.type == 'drop' and (not data or currentInventory.id == (type(data) == 'table' and data.id or data)) then
 				return client.closeInventory()
 			end
 
-			if inv ~= 'drop' and inv ~= 'container' then
-				if (data?.id or data) == currentInventory?.id then
-					-- Triggering exports.ox_inventory:openInventory('stash', 'mystash') twice in rapid succession is weird behaviour
+			-- Resolve the ID for the new inventory being opened
+			local newId
+			if inv == 'container' then
+				local itemData = PlayerData.inventory[data]
+				newId = itemData and itemData.metadata and itemData.metadata.container
+			else
+				newId = data?.id or data
+			end
+
+			print(('[multi-inv] invOpen=true, inv=%s, newId=%s, invType(drop)=%s'):format(
+				tostring(inv), tostring(newId), tostring(inv == 'drop')
+			))
+
+			-- For drops, let them fall through to the normal flow
+			if inv ~= 'drop' then
+				-- Check if this inventory is already open
+				if newId and currentInventories[newId] then
+					print(('[multi-inv] already open: %s'):format(tostring(newId)))
 					return warn(("script tried to open inventory, but it is already open\n%s"):format(Citizen.InvokeNative(`FORMAT_STACK_TRACE` & 0xFFFFFFFF, nil, 0, Citizen.ResultAsString())))
+				end
+
+				-- For compatible types (stash, container, trunk, etc.), add alongside existing
+				if newId and inv ~= 'shop' and inv ~= 'crafting' and inv ~= 'player' then
+					print(('[multi-inv] adding secondary: inv=%s, newId=%s'):format(tostring(inv), tostring(newId)))
+					local _, addRight, addError = lib.callback.await('ox_inventory:openInventory', false, inv, data, true)
+					if addError then
+						print(('[multi-inv] server returned error: %s'):format(tostring(addError)))
+						return lib.notify({ id = addError, type = 'error', description = locale(addError) })
+					end
+					if addRight and addRight.id then
+						print(('[multi-inv] success, added: id=%s, type=%s, label=%s'):format(
+							tostring(addRight.id), tostring(addRight.type), tostring(addRight.label)
+						))
+						currentInventories[addRight.id] = addRight
+						currentInventory = addRight
+						SendNUIMessage({ action = 'addSecondaryInventory', data = addRight })
+					else
+						print(('[multi-inv] server returned no right inventory'))
+					end
+					return true
 				else
+					print(('[multi-inv] closing for shop/crafting/player type'))
 					return client.closeInventory()
 				end
 			end
@@ -293,6 +336,9 @@ function client.openInventory(inv, data)
     if client.screenblur then Utils.blurIn() end
 
     currentInventory = right or defaultInventory
+    if right and right.id then
+        currentInventories[right.id] = right
+    end
     left.items = PlayerData.inventory
     left.groups = PlayerData.groups
 
@@ -396,6 +442,9 @@ RegisterNetEvent('ox_inventory:forceOpenInventory', function(left, right)
 	if client.screenblur then Utils.blurIn() end
 
 	currentInventory = right or defaultInventory
+	if right and right.id then
+		currentInventories[right.id] = right
+	end
 	currentInventory.ignoreSecurityChecks = true
 	left.items = PlayerData.inventory
 	left.groups = PlayerData.groups
@@ -870,7 +919,7 @@ local function registerCommands()
 
 		local isOpen = client.openInventory('glovebox', { netid = NetworkGetNetworkIdFromEntity(vehicle) })
 
-		if isOpen then
+		if isOpen and currentInventory then
 			currentInventory.entity = vehicle
 		end
 	end
@@ -1043,10 +1092,16 @@ function client.closeInventory(server)
 
 		if invOpen ~= nil then return end
 
-		if not server and currentInventory then
+		if not server then
+			-- Close all tracked secondaries individually
+			for id, _ in pairs(currentInventories) do
+				TriggerServerEvent('ox_inventory:closeSpecificInventory', id)
+			end
+			-- Also trigger the general close for safety (no-op if openList already empty)
 			TriggerServerEvent('ox_inventory:closeInventory')
 		end
 
+		currentInventories = {}
 		currentInventory = nil
 		plyState.invOpen = false
 		defaultInventory.coords = nil
@@ -1243,7 +1298,7 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
 		if invOpen and #(GetEntityCoords(playerPed) - data.coords) <= 1 then
 			if not cache.vehicle then
 				client.openInventory('drop', dropId)
-			else
+			elseif currentInventory then
 				SendNUIMessage({
 					action = 'setupInventory',
 					data = { rightInventory = currentInventory }
@@ -1328,8 +1383,18 @@ lib.onCache('seat', function(seat)
 end)
 
 lib.onCache('vehicle', function()
-	if invOpen and (not currentInventory.entity or currentInventory.entity == cache.vehicle) then
-		return client.closeInventory()
+	if invOpen then
+		-- Close if no secondary has an entity (i.e. not a vehicle-bound inventory), or if the entity is this vehicle
+		local hasOtherEntity = false
+		for _, inv in pairs(currentInventories) do
+			if inv.entity and inv.entity ~= cache.vehicle then
+				hasOtherEntity = true
+				break
+			end
+		end
+		if not hasOtherEntity then
+			return client.closeInventory()
+		end
 	end
 end)
 
@@ -1616,7 +1681,7 @@ RegisterNetEvent('ox_inventory:setPlayerInventory', function(currentDrops, inven
 				EnableControlAction(0, EnableKeys[i], true)
 			end
 
-			if currentInventory.type == 'newdrop' then
+			if currentInventory and currentInventory.type == 'newdrop' then
 				EnableControlAction(0, 30, true)
 				EnableControlAction(0, 31, true)
 			end
@@ -1754,6 +1819,9 @@ RegisterNetEvent('ox_inventory:viewInventory', function(left, right)
 	if client.screenblur then Utils.blurIn() end
 
 	currentInventory = right or defaultInventory
+	if right and right.id then
+		currentInventories[right.id] = right
+	end
 	currentInventory.ignoreSecurityChecks = true
     currentInventory.type = 'inspect'
 	left.items = PlayerData.inventory

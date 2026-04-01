@@ -134,18 +134,24 @@ export const findAvailableSlot = (item: Slot, data: ItemData, items: Slot[]) => 
 export const getTargetInventory = (
   state: State,
   sourceType: Inventory['type'],
-  targetType?: Inventory['type']
+  targetType?: Inventory['type'],
+  sourceId?: string,
+  targetId?: string,
 ): { sourceInventory: Inventory; targetInventory: Inventory } => {
-  const resolve = (type: Inventory['type']) => {
+  const resolve = (type: Inventory['type'], id?: string) => {
     if (type === InventoryType.PLAYER) return state.leftInventory;
     if (type === InventoryType.BACKPACK) return state.backpackInventory;
+    if (id) {
+      const extra = state.extraInventories.find((inv) => inv.id === id);
+      if (extra) return extra;
+    }
     return state.rightInventory;
   };
 
   return {
-    sourceInventory: resolve(sourceType),
+    sourceInventory: resolve(sourceType, sourceId),
     targetInventory: targetType
-      ? resolve(targetType)
+      ? resolve(targetType, targetId)
       : sourceType === InventoryType.PLAYER
         ? state.rightInventory
         : state.leftInventory,

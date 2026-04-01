@@ -5,7 +5,8 @@ import useNuiEvent from '../../hooks/useNuiEvent';
 import InventoryHotbar from './InventoryHotbar';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { store } from '../../store';
-import { refreshSlots, setAdditionalMetadata, setupInventory, restoreHotbar, selectRightInventory, selectBackpackInventory, setupBackpack, closeBackpack, removePlayerItem, removeBackpackItem, clearCraftQueue } from '../../store/inventory';
+import { refreshSlots, setAdditionalMetadata, setupInventory, restoreHotbar, selectRightInventory, selectBackpackInventory, setupBackpack, closeBackpack, removePlayerItem, removeBackpackItem, clearCraftQueue, addExtraInventory, removeExtraInventory, clearExtraInventories } from '../../store/inventory';
+import ExtraInventory from './ExtraInventory';
 import { reconcileHotbar } from '../../helpers/hotbarPersistence';
 import { useExitListener } from '../../hooks/useExitListener';
 import type { Inventory as InventoryProps } from '../../typings';
@@ -42,6 +43,7 @@ const Inventory: React.FC = () => {
     backpackInventory.type === 'backpack' && backpackInventory.id !== '',
     [backpackInventory.type, backpackInventory.id]
   );
+  const extraInventories = useAppSelector((state) => state.inventory.extraInventories);
 
   const leftDrag = usePanelDrag('ox_inv_panel_left');
   const rightDrag = usePanelDrag('ox_inv_panel_right');
@@ -91,6 +93,7 @@ const Inventory: React.FC = () => {
       dispatch(closeContextMenu());
       dispatch(closeTooltip());
       dispatch(clearCraftQueue());
+      dispatch(clearExtraInventories());
     });
   });
   useExitListener(setInventoryVisible);
@@ -116,6 +119,12 @@ const Inventory: React.FC = () => {
   useNuiEvent('displayMetadata', (data: Array<{ metadata: string; value: string }>) => {
     dispatch(setAdditionalMetadata(data));
   });
+
+  useNuiEvent('addSecondaryInventory', (data: InventoryProps) => {
+    console.log('[multi-inv:nui] addSecondaryInventory received:', data?.id, data?.type, data?.label);
+    dispatch(addExtraInventory(data));
+  });
+  useNuiEvent('removeSecondaryInventory', (id: string) => dispatch(removeExtraInventory(id)));
 
   const [, groundDrop] = useDrop<DragSource, void, {}>(() => ({
     accept: ['GRID_ITEM', 'SLOT'],
@@ -244,6 +253,9 @@ const Inventory: React.FC = () => {
               />
             )}
           </div>
+          {extraInventories.map((inv, i) => (
+            <ExtraInventory key={inv.id} inventory={inv} index={i} />
+          ))}
           <Tooltip />
           <InventoryContext />
           <button className="useful-controls-button" onClick={() => setInfoVisible(true)}>
