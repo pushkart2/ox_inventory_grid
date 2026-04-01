@@ -229,24 +229,20 @@ export const inventorySlice = createSlice({
       if (item) item.searched = true;
     },
     addExtraInventory: (state, action: PayloadAction<Inventory>) => {
-      console.log('[multi-inv:redux] addExtraInventory:', action.payload.id, action.payload.type, 'existing count:', state.extraInventories.length);
-      if (state.extraInventories.some((inv) => inv.id === action.payload.id)) {
-        console.log('[multi-inv:redux] skipping duplicate:', action.payload.id);
-        return;
-      }
+      if (state.extraInventories.some((inv) => inv.id === action.payload.id)) return;
       const curTime = Date.now();
       const processed = setupGridInventory(action.payload, curTime);
-      // If adding a real drop, replace the empty newdrop placeholder in-place
-      if (action.payload.type === 'drop') {
-        const newdropIdx = state.extraInventories.findIndex((inv) => inv.id === 'newdrop');
-        if (newdropIdx !== -1) {
-          state.extraInventories[newdropIdx] = processed;
-          console.log('[multi-inv:redux] replaced newdrop placeholder in-place');
+      // If adding a drop, replace any existing drop/newdrop in-place (only one drop panel at a time)
+      if (action.payload.type === 'drop' || action.payload.type === 'newdrop') {
+        const existingIdx = state.extraInventories.findIndex(
+          (inv) => inv.type === 'drop' || inv.type === 'newdrop'
+        );
+        if (existingIdx !== -1) {
+          state.extraInventories[existingIdx] = processed;
           return;
         }
       }
       state.extraInventories.push(processed);
-      console.log('[multi-inv:redux] added, new count:', state.extraInventories.length);
     },
     removeExtraInventory: (state, action: PayloadAction<string>) => {
       state.extraInventories = state.extraInventories.filter((inv) => inv.id !== action.payload);

@@ -2359,7 +2359,7 @@ return {
         label = "Small Backpack",
         weight = 100,
         stack = false,
-        close = true,
+        close = false,
         consume = 0,
         description = 'A compact backpack for light storage needs.',
         server = {
@@ -2385,7 +2385,7 @@ return {
         label = 'Medium Backpack',
         weight = 200,
         stack = false,
-        close = true,
+        close = false,
         consume = 0,
         description = 'A medium-sized backpack with extra storage space.',
         server = {
@@ -2412,7 +2412,7 @@ return {
         label = 'Large Backpack',
         weight = 300,
         stack = false,
-        close = true,
+        close = false,
         consume = 0,
         description = 'A large backpack designed for long expeditions.',
         server = {
@@ -3348,7 +3348,7 @@ return {
         label = 'Plate Carrier (Tier 1)',
         weight = 3000,
         stack = false,
-        close = true,
+        close = false,
         consume = 0,
         server = {
             export = 'tarp_platecarrier.openCarrier'
@@ -3359,7 +3359,7 @@ return {
         label = 'Plate Carrier (Tier 2)',
         weight = 3500,
         stack = false,
-        close = true,
+        close = false,
         consume = 0,
         server = {
             export = 'tarp_platecarrier.openCarrier'
@@ -3370,7 +3370,7 @@ return {
         label = 'Plate Carrier (Tier 3)',
         weight = 4000,
         stack = false,
-        close = true,
+        close = false,
         consume = 0,
         server = {
             export = 'tarp_platecarrier.openCarrier'

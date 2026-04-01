@@ -48,12 +48,14 @@ const Inventory: React.FC = () => {
   const backpackDrag = usePanelDrag('ox_inv_panel_backpack');
 
   useEffect(() => {
-    if (hasRightInventory && leftDrag.position && !rightDrag.position) {
+    if (hasRightInventory && !rightDrag.position) {
       const leftEl = leftDrag.panelRef.current;
       if (leftEl) {
+        const leftRect = leftEl.getBoundingClientRect();
+        const leftPos = leftDrag.position ?? { x: leftRect.left, y: leftRect.top };
         rightDrag.setPosition({
-          x: leftDrag.position.x + leftEl.offsetWidth + 16,
-          y: leftDrag.position.y,
+          x: leftPos.x + leftEl.offsetWidth + 16,
+          y: leftPos.y,
         });
       }
     }

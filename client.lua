@@ -481,11 +481,10 @@ exports('openInventory', client.openInventory)
 RegisterNetEvent('ox_inventory:forceOpenInventory', function(left, right)
 	if source == '' then return end
 
-	-- If inventory is already open, add as extra panel instead of replacing
+	-- If inventory is already open, add stash as extra panel (keep rightInventory as the drop panel)
 	if invOpen and right and right.id then
 		if not currentInventories[right.id] then
 			currentInventories[right.id] = right
-			currentInventory = right
 			SendNUIMessage({ action = 'addSecondaryInventory', data = right })
 		end
 		return
@@ -561,50 +560,7 @@ RegisterNetEvent('ox_inventory:forceOpenInventory', function(left, right)
 		}
 	})
 
-	-- Always show a drop panel alongside any secondary inventory
-    if currentInventory.type ~= 'newdrop' and currentInventory.type ~= 'drop' then
-		print("Coming here?")
-        local playerCoords = GetEntityCoords(playerPed)
-        local nearbyDrop = nil
-
-        -- Check for an existing nearby drop to show instead of an empty placeholder
-        if client.drops then
-            local closestDist = 2.0
-            for dropId, point in pairs(client.drops) do
-                if point.coords then
-                    local dist = #(playerCoords - point.coords)
-                    if dist < closestDist then
-                        closestDist = dist
-                        nearbyDrop = dropId
-                    end
-                end
-            end
-        end
-		print(nearbyDrop)
-        if nearbyDrop then
-            -- Open existing nearby drop as extra panel
-            local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', nearbyDrop, true)
-            if dropRight and dropRight.id then
-                currentInventories[dropRight.id] = dropRight
-				print("Showing nearby drop:", dropRight.id)
-                SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
-            end
-        else
-            -- Show empty newdrop placeholder
-            local dropPlaceholder = {
-                id = 'newdrop',
-                label = locale('drops') or 'Drop',
-                type = 'newdrop',
-                slots = shared.dropslots,
-                weight = 0,
-                maxWeight = shared.dropweight,
-                items = {},
-                gridWidth = shared.gridwidth or 10,
-                gridHeight = shared.gridheight or 7,
-            }
-            SendNUIMessage({ action = 'addSecondaryInventory', data = dropPlaceholder })
-        end
-    end
+	-- Drop panel is handled by setupInventoryReducer (adds newdrop to extraInventories automatically)
 end)
 
 local Animations = lib.load('data.animations')
@@ -703,7 +659,7 @@ local function useItem(data, cb, noAnim)
         DisablePlayerFiring(cache.playerId, true)
     end
 
-    if invOpen and data.close then client.closeInventory() end
+    -- if invOpen and data.close then client.closeInventory() end
 
     usingItem = true
     ---@type boolean?
@@ -1401,14 +1357,17 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
 
 		if invOpen and #(GetEntityCoords(playerPed) - data.coords) <= 1 then
 			if not cache.vehicle then
-				-- If a secondary inventory is already open, add drop as extra panel
-				if currentInventory and next(currentInventories) then
-					-- Remove the newdrop placeholder if present, replace with real drop
-					SendNUIMessage({ action = 'removeSecondaryInventory', data = 'newdrop' })
+				if currentInventory then
 					local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', dropId, true)
 					if dropRight and dropRight.id then
 						currentInventories[dropRight.id] = dropRight
-						SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
+						-- Always replace rightInventory with the real drop
+						-- (rightInventory is either newdrop placeholder or the previous drop)
+						currentInventory = dropRight
+						SendNUIMessage({
+							action = 'setupInventory',
+							data = { rightInventory = dropRight }
+						})
 					end
 				else
 					client.openInventory('drop', dropId)
