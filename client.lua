@@ -903,11 +903,9 @@ local function useSlot(slot, noAnim)
 					end
 				end
 				lib.notify({ id = 'component_invalid', type = 'error', description = locale('component_invalid', label) })
-			elseif data.allowArmed then
+			else
 				useItem(data)
-            else
-                return lib.notify({ id = 'cannot_perform', type = 'error', description = locale('cannot_perform') })
-			end
+            end
 		elseif not data.ammo and not data.component then
 			useItem(data)
 		end
@@ -1362,22 +1360,14 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
 					local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', dropId, true)
 					if dropRight and dropRight.id then
 						currentInventories[dropRight.id] = dropRight
-						-- Always replace rightInventory with the real drop
-						-- (rightInventory is either newdrop placeholder or the previous drop)
-						currentInventory = dropRight
 						SendNUIMessage({
-							action = 'setupInventory',
-							data = { rightInventory = dropRight }
+							action = 'addSecondaryInventory',
+							data = dropRight
 						})
 					end
 				else
 					client.openInventory('drop', dropId)
 				end
-			elseif currentInventory then
-				SendNUIMessage({
-					action = 'setupInventory',
-					data = { rightInventory = currentInventory }
-				})
 			end
 		end
 	end
