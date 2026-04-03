@@ -2,6 +2,7 @@ if not lib then return end
 
 require 'modules.bridge.client'
 require 'modules.interface.client'
+require 'modules.clothing.client'
 
 local Utils = require 'modules.utils.client'
 local Weapon = require 'modules.weapon.client'
@@ -152,7 +153,6 @@ function client.openInventory(inv, data)
 		if IsNuiFocused() then
 			-- Toggle close if re-opening the same container
 			if inv == 'container' and currentInventory and currentInventory.id == PlayerData.inventory[data].metadata.container then
-				print(('[multi-inv] toggle-close same container: %s'):format(currentInventory.id))
 				return client.closeInventory()
 			end
 
@@ -170,39 +170,26 @@ function client.openInventory(inv, data)
 				newId = data?.id or data
 			end
 
-			print(('[multi-inv] invOpen=true, inv=%s, newId=%s, invType(drop)=%s'):format(
-				tostring(inv), tostring(newId), tostring(inv == 'drop')
-			))
-
 			-- For drops, let them fall through to the normal flow
 			if inv ~= 'drop' then
 				-- Check if this inventory is already open
 				if newId and currentInventories[newId] then
-					print(('[multi-inv] already open: %s'):format(tostring(newId)))
 					return warn(("script tried to open inventory, but it is already open\n%s"):format(Citizen.InvokeNative(`FORMAT_STACK_TRACE` & 0xFFFFFFFF, nil, 0, Citizen.ResultAsString())))
 				end
 
 				-- For compatible types (stash, container, trunk, etc.), add alongside existing
 				if newId and inv ~= 'shop' and inv ~= 'crafting' and inv ~= 'player' then
-					print(('[multi-inv] adding secondary: inv=%s, newId=%s'):format(tostring(inv), tostring(newId)))
 					local _, addRight, addError = lib.callback.await('ox_inventory:openInventory', false, inv, data, true)
 					if addError then
-						print(('[multi-inv] server returned error: %s'):format(tostring(addError)))
 						return lib.notify({ id = addError, type = 'error', description = locale(addError) })
 					end
 					if addRight and addRight.id then
-						print(('[multi-inv] success, added: id=%s, type=%s, label=%s'):format(
-							tostring(addRight.id), tostring(addRight.type), tostring(addRight.label)
-						))
 						currentInventories[addRight.id] = addRight
 						currentInventory = addRight
 						SendNUIMessage({ action = 'addSecondaryInventory', data = addRight })
-					else
-						print(('[multi-inv] server returned no right inventory'))
 					end
 					return true
 				else
-					print(('[multi-inv] closing for shop/crafting/player type'))
 					return client.closeInventory()
 				end
 			end
@@ -389,7 +376,6 @@ function client.openInventory(inv, data)
 
     currentInventory.searchable = isSearchable
     currentInventory.unsearchedCount = unsearchedCount
-	print("triggered when opening stash?")
     SendNUIMessage({
         action = 'setupInventory',
         data = {
@@ -398,11 +384,20 @@ function client.openInventory(inv, data)
         }
     })
 
+    -- Fetch and send clothing stash data to UI
+    lib.callback('ox_inventory:clothing:getClothingForUI', false, function(clothingData)
+        if clothingData then
+            SendNUIMessage({
+                action = 'addSecondaryInventory',
+                data = clothingData
+            })
+        end
+    end)
+
 	Wait(100)
 
     -- Always show a drop panel alongside any secondary inventory
     if currentInventory.type ~= 'newdrop' and currentInventory.type ~= 'drop' then
-		print("Coming here?")
         local playerCoords = GetEntityCoords(playerPed)
         local nearbyDrop = nil
 
@@ -419,13 +414,11 @@ function client.openInventory(inv, data)
                 end
             end
         end
-		print(nearbyDrop)
         if nearbyDrop then
             -- Open existing nearby drop as extra panel
             local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', nearbyDrop, true)
             if dropRight and dropRight.id then
                 currentInventories[dropRight.id] = dropRight
-				print("Showing nearby drop:", dropRight.id)
                 SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
             end
         else
@@ -560,7 +553,15 @@ RegisterNetEvent('ox_inventory:forceOpenInventory', function(left, right)
 		}
 	})
 
-	-- Drop panel is handled by setupInventoryReducer (adds newdrop to extraInventories automatically)
+	-- Fetch and send clothing stash data to UI
+	lib.callback('ox_inventory:clothing:getClothingForUI', false, function(clothingData)
+		if clothingData then
+			SendNUIMessage({
+				action = 'addSecondaryInventory',
+				data = clothingData
+			})
+		end
+	end)
 end)
 
 local Animations = lib.load('data.animations')
@@ -659,7 +660,7 @@ local function useItem(data, cb, noAnim)
         DisablePlayerFiring(cache.playerId, true)
     end
 
-    -- if invOpen and data.close then client.closeInventory() end
+    if invOpen and data.close then client.closeInventory() end
 
     usingItem = true
     ---@type boolean?
@@ -2109,7 +2110,9 @@ local swapActive = false
 
 ---Synchronise and validate all item movement between the NUI and server.
 RegisterNUICallback('swapItems', function(data, cb)
-    if swapActive or not invOpen or invBusy or usingItem then return cb(false) end
+    if swapActive or not invOpen or invBusy or usingItem then
+        return cb(false)
+    end
 
     swapActive = true
 

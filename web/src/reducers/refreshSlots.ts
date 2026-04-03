@@ -47,6 +47,8 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
           targetInventory = state.leftInventory;
         } else if (data.inventory === InventoryType.BACKPACK || (state.backpackInventory.id && data.inventory === state.backpackInventory.id)) {
           targetInventory = state.backpackInventory;
+        } else if (data.inventory === InventoryType.CLOTHING || (state.clothingInventory.id && data.inventory === state.clothingInventory.id)) {
+          targetInventory = state.clothingInventory;
         } else if (data.inventory === state.rightInventory.id || data.inventory === state.rightInventory.type) {
           targetInventory = state.rightInventory;
         } else {
@@ -56,6 +58,7 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
 
         const invKey = targetInventory === state.leftInventory ? 'left'
           : targetInventory === state.backpackInventory ? 'backpack'
+          : targetInventory === state.clothingInventory ? 'clothing'
           : targetInventory === state.rightInventory ? 'right'
           : `extra_${targetInventory.id}`;
 
@@ -161,6 +164,8 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
         ? 'rightInventory'
         : inventoryId === state.backpackInventory.id
         ? 'backpackInventory'
+        : inventoryId === state.clothingInventory.id
+        ? 'clothingInventory'
         : extraIdx !== -1
         ? ('extra' as const)
         : null;
@@ -186,6 +191,8 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
         ? 'rightInventory'
         : inventoryId === state.backpackInventory.id
         ? 'backpackInventory'
+        : inventoryId === state.clothingInventory.id
+        ? 'clothingInventory'
         : extraIdx !== -1
         ? ('extra' as const)
         : null;

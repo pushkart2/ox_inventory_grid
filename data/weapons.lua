@@ -481,6 +481,7 @@ return {
 			weight = 1130,
 			durability = 0.1,
 			ammoname = 'ammo-9',
+            rarity = 'legendary',
 		},
 
 		['WEAPON_PISTOL50'] = {

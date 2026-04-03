@@ -26,6 +26,7 @@ const initialState: State = {
   leftInventory: { ...emptyInventory },
   rightInventory: { ...emptyInventory },
   backpackInventory: { ...emptyInventory },
+  clothingInventory: { ...emptyInventory },
   extraInventories: [] as Inventory[],
   additionalMetadata: new Array(),
   itemAmount: 0,
@@ -111,6 +112,13 @@ export const inventorySlice = createSlice({
     },
     closeBackpack: (state) => {
       state.backpackInventory = { id: '', type: '', slots: 0, maxWeight: 0, items: [] };
+    },
+    setupClothing: (state, action: PayloadAction<Inventory>) => {
+      const curTime = Math.floor(Date.now() / 1000);
+      state.clothingInventory = setupGridInventory(action.payload, curTime);
+    },
+    closeClothing: (state) => {
+      state.clothingInventory = { id: '', type: '', slots: 0, maxWeight: 0, items: [] };
     },
     setBackpackWeight: (state, action: PayloadAction<number>) => {
       const backpackItem = state.leftInventory.items.find(
@@ -263,6 +271,7 @@ export const inventorySlice = createSlice({
         leftInventory: current(state.leftInventory),
         rightInventory: current(state.rightInventory),
         backpackInventory: current(state.backpackInventory),
+        clothingInventory: current(state.clothingInventory),
         extraInventories: current(state.extraInventories),
       };
     });
@@ -275,6 +284,9 @@ export const inventorySlice = createSlice({
         state.rightInventory = state.history.rightInventory;
         if (state.history.backpackInventory) {
           state.backpackInventory = state.history.backpackInventory;
+        }
+        if (state.history.clothingInventory) {
+          state.clothingInventory = state.history.clothingInventory;
         }
         if (state.history.extraInventories) {
           state.extraInventories = state.history.extraInventories;
@@ -308,6 +320,8 @@ export const {
   setupBackpack,
   closeBackpack,
   setBackpackWeight,
+  setupClothing,
+  closeClothing,
   addToCraftQueue,
   updateCraftQueueItem,
   completeSingleCraft,
@@ -325,6 +339,7 @@ export const {
 export const selectLeftInventory = (state: RootState) => state.inventory.leftInventory;
 export const selectRightInventory = (state: RootState) => state.inventory.rightInventory;
 export const selectBackpackInventory = (state: RootState) => state.inventory.backpackInventory;
+export const selectClothingInventory = (state: RootState) => state.inventory.clothingInventory;
 export const selectItemAmount = (state: RootState) => state.inventory.itemAmount;
 export const selectIsBusy = (state: RootState) => state.inventory.isBusy;
 export const selectDragRotated = (state: RootState) => state.inventory.dragRotated;

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/TARP-outbreak/txData/Qbox_2A5B12.base/resources/[scripts]/[TARP]/tarp_clothing/server/**)",
+      "Read(//d/TARP-outbreak/txData/Qbox_2A5B12.base/resources/**)"
+    ]
+  }
+}

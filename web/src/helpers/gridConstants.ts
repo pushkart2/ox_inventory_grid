@@ -7,6 +7,7 @@ export const DEFAULT_GRID_DIMENSIONS: Record<string, GridDimensions> = {
   glovebox: { gridWidth: 5, gridHeight: 2 },
   container: { gridWidth: 4, gridHeight: 3 },
   backpack: { gridWidth: 5, gridHeight: 4 },
+  clothing: { gridWidth: 2, gridHeight: 7 },
   drop: { gridWidth: 10, gridHeight: 7 },
   newdrop: { gridWidth: 10, gridHeight: 7 },
   dumpster: { gridWidth: 6, gridHeight: 3 },

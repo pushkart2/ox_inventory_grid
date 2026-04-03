@@ -411,7 +411,7 @@ function Inventory.SetSlot(inv, item, count, metadata, slot, skipGridPlacement)
 	inv = Inventory(inv)
 
 	if not inv then return end
-	if not slot then print('[ox_inventory] SetSlot called with nil slot') return end
+	if not slot then return end
 
 	local currentSlot = inv.items[slot]
 	local newCount = currentSlot and currentSlot.count + count or count
@@ -2209,25 +2209,6 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
 			local grid = GridUtils.BuildOccupancy(fromInventory, data.fromSlot)
 			if not GridUtils.CanPlace(grid, gridWidth, gridHeight, gx, gy, w, h) then
-				print(('[ox_inventory] grid_collision (reposition): item=%s slot=%d gx=%d gy=%d w=%d h=%d gridW=%d gridH=%d'):format(
-					fromData.name, data.fromSlot, gx, gy, w, h, gridWidth, gridHeight
-				))
-				for dy = 0, h - 1 do
-					for dx = 0, w - 1 do
-						local cy, cx = gy + dy, gx + dx
-						if grid[cy] and grid[cy][cx] then
-							local blockingItem = fromInventory.items[grid[cy][cx]]
-							print(('[ox_inventory]   cell (%d,%d) occupied by slot %s (%s at gridX=%s gridY=%s)'):format(
-								cx, cy, tostring(grid[cy][cx]),
-								blockingItem and blockingItem.name or '?',
-								blockingItem and tostring(blockingItem.gridX) or '?',
-								blockingItem and tostring(blockingItem.gridY) or '?'
-							))
-						elseif not grid[cy] or grid[cy][cx] == nil then
-							print(('[ox_inventory]   cell (%d,%d) out of bounds'):format(cx, cy))
-						end
-					end
-				end
 				return false, 'grid_collision'
 			end
 
@@ -2509,26 +2490,6 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 
 					local grid = GridUtils.BuildOccupancy(toInventory, sameInventory and data.fromSlot or nil)
 					if not GridUtils.CanPlace(grid, gridWidth, gridHeight, toData.gridX, toData.gridY, w, h) then
-						print(('[ox_inventory] grid_collision (move): item=%s from=%s to=%s gx=%d gy=%d w=%d h=%d gridW=%d gridH=%d sameInv=%s'):format(
-							toData.name, tostring(fromInventory.id), tostring(toInventory.id),
-							toData.gridX, toData.gridY, w, h, gridWidth, gridHeight, tostring(sameInventory)
-						))
-						for dy = 0, h - 1 do
-							for dx = 0, w - 1 do
-								local cy, cx = toData.gridY + dy, toData.gridX + dx
-								if grid[cy] and grid[cy][cx] then
-									local blockingItem = toInventory.items[grid[cy][cx]]
-									print(('[ox_inventory]   cell (%d,%d) occupied by slot %s (%s at gridX=%s gridY=%s)'):format(
-										cx, cy, tostring(grid[cy][cx]),
-										blockingItem and blockingItem.name or '?',
-										blockingItem and tostring(blockingItem.gridX) or '?',
-										blockingItem and tostring(blockingItem.gridY) or '?'
-									))
-								elseif not grid[cy] or grid[cy][cx] == nil then
-									print(('[ox_inventory]   cell (%d,%d) out of bounds'):format(cx, cy))
-								end
-							end
-						end
 						return false, 'grid_collision'
 					end
 				end

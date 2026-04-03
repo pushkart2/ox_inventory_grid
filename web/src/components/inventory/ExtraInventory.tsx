@@ -118,7 +118,28 @@ const ExtraInventory: React.FC<Props> = ({ inventory, index }) => {
         zIndex: focusedLocal ? 150 : 120,
       };
 
-  const canSort = inventory.type !== 'player';
+  const isClothingStash = String(inventory.id).includes('clothing_stash');
+  const canSort = inventory.type !== 'player' && !isClothingStash;
+
+  if (isClothingStash) {
+    return (
+      <div
+        className="inventory-panel inventory-panel--extra inventory-panel--active inventory-panel--positioned"
+        style={{
+          position: 'fixed',
+          left: 16,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 120,
+        }}
+      >
+        <GridInventory
+          inventory={inventory}
+          canSort={false}
+        />
+      </div>
+    );
+  }
 
   return (
     <div

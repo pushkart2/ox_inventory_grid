@@ -211,6 +211,7 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
           const moveCount = activeSplit ?? shiftHalf ?? item.count;
           const sourceInv = isLeft ? state.leftInventory
             : isBackpack ? state.backpackInventory
+            : inventoryId === state.clothingInventory.id ? state.clothingInventory
             : inventoryId === state.rightInventory.id ? state.rightInventory
             : state.extraInventories.find((inv) => inv.id === inventoryId) ?? state.rightInventory;
           let maxSlot = 0;

@@ -1252,6 +1252,25 @@ button:active {
     }
   }
 
+  &--clothing {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.inventory-panel--active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .grid-header-right {
+      display: none !important;
+    }
+
+    .inventory-grid-wrapper {
+      width: fit-content;
+    }
+  }
+
   &--dragging {
     z-index: 2000 !important;
 

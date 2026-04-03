@@ -5,7 +5,7 @@ import useNuiEvent from '../../hooks/useNuiEvent';
 import InventoryHotbar from './InventoryHotbar';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { store } from '../../store';
-import { refreshSlots, setAdditionalMetadata, setupInventory, restoreHotbar, selectRightInventory, selectBackpackInventory, setupBackpack, closeBackpack, removePlayerItem, removeBackpackItem, clearCraftQueue, addExtraInventory, removeExtraInventory, clearExtraInventories } from '../../store/inventory';
+import { refreshSlots, setAdditionalMetadata, setupInventory, restoreHotbar, selectRightInventory, selectBackpackInventory, selectClothingInventory, setupBackpack, closeBackpack, setupClothing, closeClothing, removePlayerItem, removeBackpackItem, clearCraftQueue, addExtraInventory, removeExtraInventory, clearExtraInventories } from '../../store/inventory';
 import ExtraInventory from './ExtraInventory';
 import { reconcileHotbar } from '../../helpers/hotbarPersistence';
 import { useExitListener } from '../../hooks/useExitListener';
@@ -14,6 +14,7 @@ import { DragSource } from '../../typings';
 import RightInventory from './RightInventory';
 import LeftInventory from './LeftInventory';
 import BackpackInventory from './BackpackInventory';
+import ClothingInventory from './ClothingInventory';
 import Tooltip from '../utils/Tooltip';
 import { closeTooltip } from '../../store/tooltip';
 import InventoryContext from './InventoryContext';
@@ -41,11 +42,17 @@ const Inventory: React.FC = () => {
     backpackInventory.type === 'backpack' && backpackInventory.id !== '',
     [backpackInventory.type, backpackInventory.id]
   );
+  const clothingInventory = useAppSelector(selectClothingInventory);
+  const hasClothing = useMemo(() =>
+    clothingInventory.type === 'clothing' && clothingInventory.id !== '',
+    [clothingInventory.type, clothingInventory.id]
+  );
   const extraInventories = useAppSelector((state) => state.inventory.extraInventories);
 
   const leftDrag = usePanelDrag('ox_inv_panel_left');
   const rightDrag = usePanelDrag('ox_inv_panel_right');
   const backpackDrag = usePanelDrag('ox_inv_panel_backpack');
+  // clothingDrag removed — clothing panel is fixed position
 
   useEffect(() => {
     if (hasRightInventory && !rightDrag.position) {
@@ -85,6 +92,8 @@ const Inventory: React.FC = () => {
     backpackDrag.onMouseDown(e);
   }, [backpackDrag.onMouseDown, backpackDrag.isLocked]);
 
+  // clothing panel is fixed — no drag handler needed
+
   useNuiEvent<boolean>('setInventoryVisible', setInventoryVisible);
   useNuiEvent<false>('closeInventory', () => {
     batch(() => {
@@ -93,6 +102,7 @@ const Inventory: React.FC = () => {
       dispatch(closeContextMenu());
       dispatch(closeTooltip());
       dispatch(clearCraftQueue());
+      dispatch(closeClothing());
       dispatch(clearExtraInventories());
     });
   });
@@ -115,6 +125,11 @@ const Inventory: React.FC = () => {
     dispatch(setupBackpack(data.backpackInventory));
   });
   useNuiEvent('closeBackpack', () => dispatch(closeBackpack()));
+
+  useNuiEvent<{ clothingInventory: InventoryProps }>('setupClothing', (data) => {
+    dispatch(setupClothing(data.clothingInventory));
+  });
+  useNuiEvent('closeClothing', () => dispatch(closeClothing()));
 
   useNuiEvent('displayMetadata', (data: Array<{ metadata: string; value: string }>) => {
     dispatch(setAdditionalMetadata(data));
@@ -199,6 +214,14 @@ const Inventory: React.FC = () => {
       <UsefulControls infoVisible={infoVisible} setInfoVisible={setInfoVisible} />
       <Fade in={inventoryVisible}>
         <div ref={groundDrop} className="inventory-wrapper">
+          <div
+            className={`inventory-panel inventory-panel--clothing inventory-panel--positioned${hasClothing ? ' inventory-panel--active' : ''}`}
+            style={{ left: 16, top: '50%', transform: 'translateY(-50%)' }}
+          >
+            {hasClothing && (
+              <ClothingInventory />
+            )}
+          </div>
           <div
             ref={leftDrag.panelRef}
             className={`inventory-panel inventory-panel--left${leftPositioned ? ' inventory-panel--positioned' : ''}${leftDrag.isDragging ? ' inventory-panel--dragging' : ''}`}

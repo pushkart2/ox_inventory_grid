@@ -141,6 +141,7 @@ export const getTargetInventory = (
   const resolve = (type: Inventory['type'], id?: string) => {
     if (type === InventoryType.PLAYER) return state.leftInventory;
     if (type === InventoryType.BACKPACK) return state.backpackInventory;
+    if (type === 'clothing') return state.clothingInventory;
     if (id) {
       const extra = state.extraInventories.find((inv) => inv.id === id);
       if (extra) return extra;

@@ -3189,7 +3189,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_scarf_basic"] = {
@@ -3198,7 +3198,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_jacket_basic"] = {
@@ -3207,7 +3207,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_shirt_basic"] = {
@@ -3216,7 +3216,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_body_armor_basic"] = {
@@ -3225,7 +3225,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_bag_basic"] = {
@@ -3234,7 +3234,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_gloves_basic"] = {
@@ -3243,7 +3243,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_pants_basic"] = {
@@ -3252,7 +3252,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_shoes_basic"] = {
@@ -3261,7 +3261,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_hat_basic"] = {
@@ -3270,7 +3270,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_glasses_basic"] = {
@@ -3279,7 +3279,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_earwear_basic"] = {
@@ -3288,7 +3288,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_watch_basic"] = {
@@ -3297,7 +3297,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_bracelet_basic"] = {
@@ -3306,7 +3306,7 @@ return {
         stack = false,
         consume = 0,
         server = {
-            export = 'tarp_clothing.wearClothing',
+            export = 'ox_inventory.wearClothing',
         }
     },
     ["clothing_tag"] = {
@@ -3321,7 +3321,7 @@ return {
         weight = 500,
         stack = false,
         server = {
-            export = 'tarp_clothing.useSurgeryKit',
+            export = 'ox_inventory.useSurgeryKit',
         }
     },
     ["tattoo_kit"] = {
@@ -3330,7 +3330,7 @@ return {
         weight = 1,
         stack = false,
         server = {
-            export = 'tarp_clothing.useTattooKit',
+            export = 'ox_inventory.useTattooKit',
         }
     },
 

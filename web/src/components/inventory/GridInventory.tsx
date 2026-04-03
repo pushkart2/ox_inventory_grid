@@ -363,6 +363,8 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
           ? reduxState.leftInventory
           : source.inventoryId === reduxState.backpackInventory.id
           ? reduxState.backpackInventory
+          : source.inventoryId === reduxState.clothingInventory.id
+          ? reduxState.clothingInventory
           : source.inventoryId === reduxState.rightInventory.id
           ? reduxState.rightInventory
           : reduxState.extraInventories.find((inv) => inv.id === source.inventoryId) ?? reduxState.rightInventory;
@@ -709,7 +711,7 @@ const GridInventory: React.FC<GridInventoryProps> = ({ inventory, onHeaderMouseD
               </div>
             </div>
           )}
-          {inventory.maxWeight !== undefined && inventory.maxWeight > 0 && (
+          {inventory.maxWeight !== undefined && inventory.maxWeight > 0 && !String(inventory.id).includes('clothing_stash') && (
             <div className="grid-header-weight-group">
               <span className="grid-header-weight">{weightKg}</span>
               <span className="grid-header-weight-separator">/</span>

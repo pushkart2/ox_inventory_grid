@@ -10,6 +10,7 @@ export type State = {
   leftInventory: Inventory;
   rightInventory: Inventory;
   backpackInventory: Inventory;
+  clothingInventory: Inventory;
   extraInventories: Inventory[];
   itemAmount: number;
   shiftPressed: boolean;
@@ -19,6 +20,7 @@ export type State = {
     leftInventory: Inventory;
     rightInventory: Inventory;
     backpackInventory: Inventory;
+    clothingInventory: Inventory;
     extraInventories: Inventory[];
   };
   dragRotated: boolean;
