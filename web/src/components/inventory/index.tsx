@@ -136,7 +136,6 @@ const Inventory: React.FC = () => {
   });
 
   useNuiEvent('addSecondaryInventory', (data: InventoryProps) => {
-    console.log('[multi-inv:nui] addSecondaryInventory received:', data?.id, data?.type, data?.label);
     dispatch(addExtraInventory(data));
   });
   useNuiEvent('removeSecondaryInventory', (id: string) => dispatch(removeExtraInventory(id)));
