@@ -104,18 +104,35 @@ const InventoryContext: React.FC = () => {
             for (const i of openDrop.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
             for (const i of sourceInv.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
 
+            const toSlotId = maxSlot + 1;
+
             dispatch(
               validateMove({
                 fromType: sourceInv.type,
                 fromId: sourceInv.id,
                 fromSlot: item.slot,
-                toSlot: maxSlot + 1,
+                toSlot: toSlotId,
                 toType: openDrop.type,
                 toId: openDrop.id,
                 toGridX: fit.x,
                 toGridY: fit.y,
                 rotated: fit.rotated,
                 count: dropCount,
+              })
+            );
+
+            dispatch(
+              gridMoveSlots({
+                fromSlot: item,
+                fromType: sourceInv.type,
+                toType: openDrop.type,
+                toSlotId,
+                count: dropCount,
+                toGridX: fit.x,
+                toGridY: fit.y,
+                rotated: fit.rotated ?? false,
+                sourceId: sourceInv.id,
+                targetId: openDrop.id,
               })
             );
           } else {
