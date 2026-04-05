@@ -2097,7 +2097,7 @@ end
 ---@param toData table
 ---@return boolean canStack
 ---@return number? durability
-local function canStackDurability(fromData, toData)
+function canStackDurability(fromData, toData)
 	if not fromData.metadata.durability or not toData.metadata.durability then return false end
 
 	local metaFrom = lib.table.deepclone(fromData.metadata)
