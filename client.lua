@@ -396,8 +396,9 @@ function client.openInventory(inv, data)
 
 	Wait(100)
 
-    -- Always show a drop panel alongside any secondary inventory
-    if currentInventory.type ~= 'newdrop' and currentInventory.type ~= 'drop' then
+    -- Show a drop panel (nearby existing drop or empty placeholder)
+    -- Skip only if the right inventory is already a drop (opened explicitly via openInventory('drop'))
+    if currentInventory.type ~= 'drop' then
         local playerCoords = GetEntityCoords(playerPed)
         local nearbyDrop = nil
 
@@ -421,8 +422,8 @@ function client.openInventory(inv, data)
                 currentInventories[dropRight.id] = dropRight
                 SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
             end
-        else
-            -- Show empty newdrop placeholder
+        elseif currentInventory.type ~= 'newdrop' then
+            -- Show empty newdrop placeholder (skip if setupInventory already added one)
             local dropPlaceholder = {
                 id = 'newdrop',
                 label = locale('drops') or 'Drop',
