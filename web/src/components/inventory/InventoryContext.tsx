@@ -85,35 +85,19 @@ const InventoryContext: React.FC = () => {
             ? invState.backpackInventory
             : invState.rightInventory;
 
-          // Check if there's an open drop inventory to drop into
-          const openDrop =
-            (invState.rightInventory.type === 'drop' && invState.rightInventory.id) ? invState.rightInventory :
-            invState.extraInventories.find((inv) => inv.type === 'drop' && inv.id);
+          // Find an existing drop/newdrop panel to drop into
+          const openDrop = invState.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop');
 
-          if (openDrop) {
-            // Drop into existing open drop inventory
-            dispatch(
-              validateMove({
-                fromType: sourceInv.type,
-                fromSlot: item.slot,
-                toType: openDrop.type,
-                toId: openDrop.id,
-                toSlot: 0,
-                count: dropCount,
-              })
-            );
-          } else {
-            // No open drop — create a new one
-            dispatch(
-              validateMove({
-                fromType: sourceInv.type,
-                fromSlot: item.slot,
-                toType: 'newdrop',
-                toSlot: 0,
-                count: dropCount,
-              })
-            );
-          }
+          dispatch(
+            validateMove({
+              fromType: sourceInv.type,
+              fromSlot: item.slot,
+              toType: openDrop ? openDrop.type : 'newdrop',
+              toId: openDrop?.id,
+              toSlot: 0,
+              count: dropCount,
+            })
+          );
         }
         break;
       case 'remove':

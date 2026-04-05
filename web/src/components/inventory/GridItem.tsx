@@ -180,11 +180,14 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
             targetInv = state.backpackInventory;
           } else {
             const moveCount = event.shiftKey && item.count > 1 ? Math.floor(item.count / 2) : item.count;
+            const openDrop =
+              state.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop');
             dispatch(validateMove({
               fromSlot: item.slot,
               fromType: inventoryType,
               toSlot: 0,
-              toType: 'newdrop',
+              toType: openDrop ? openDrop.type : 'newdrop',
+              toId: openDrop?.id,
               count: moveCount,
             }) as any);
             dispatch(removePlayerItem(item.slot));
