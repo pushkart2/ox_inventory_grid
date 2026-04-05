@@ -147,13 +147,8 @@ const Inventory: React.FC = () => {
 
       const clientOffset = monitor.getClientOffset();
       if (clientOffset) {
-        const panels = [
-          leftDrag.panelRef.current,
-          backpackDrag.panelRef.current,
-          rightDrag.panelRef.current,
-        ];
-        for (const panel of panels) {
-          if (!panel) continue;
+        const allPanels = document.querySelectorAll('.inventory-panel--active');
+        for (const panel of allPanels) {
           const rect = panel.getBoundingClientRect();
           if (
             clientOffset.x >= rect.left && clientOffset.x <= rect.right &&
