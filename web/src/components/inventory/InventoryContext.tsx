@@ -6,7 +6,8 @@ import { fetchNui } from '../../utils/fetchNui';
 import { Locale } from '../../store/locale';
 import { getItemUrl, isSlotWithItem } from '../../helpers';
 import { useImageUrl, handleImageError } from '../../hooks/useImageUrl';
-import { isGridInventory, buildOccupancyGrid, findFirstFit, getItemSize } from '../../helpers/gridUtils';
+import { buildOccupancyGrid, findFirstFit, getItemSize } from '../../helpers/gridUtils';
+import { getItemSizes } from '../../helpers/itemSizeCache';
 import { setClipboard } from '../../utils/setClipboard';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { store } from '../../store';
@@ -88,16 +89,43 @@ const InventoryContext: React.FC = () => {
           // Find an existing drop/newdrop panel to drop into
           const openDrop = invState.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop');
 
-          dispatch(
-            validateMove({
-              fromType: sourceInv.type,
-              fromSlot: item.slot,
-              toType: openDrop ? openDrop.type : 'newdrop',
-              toId: openDrop?.id,
-              toSlot: 0,
-              count: dropCount,
-            })
-          );
+          if (openDrop && openDrop.type === 'drop') {
+            const itemSizes = getItemSizes();
+            const size = getItemSize(item.name, itemSizes);
+            const gridW = openDrop.gridWidth ?? 10;
+            const gridH = openDrop.gridHeight ?? 7;
+            const occupancy = buildOccupancyGrid(gridW, gridH, openDrop.items, itemSizes);
+            const fit = findFirstFit(occupancy, gridW, gridH, size.width, size.height);
+            if (!fit) break;
+
+            let maxSlot = 0;
+            for (const i of openDrop.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
+
+            dispatch(
+              validateMove({
+                fromType: sourceInv.type,
+                fromSlot: item.slot,
+                toSlot: maxSlot + 1,
+                toType: openDrop.type,
+                toId: openDrop.id,
+                toGridX: fit.x,
+                toGridY: fit.y,
+                rotated: fit.rotated,
+                count: dropCount,
+              })
+            );
+          } else {
+            dispatch(
+              validateMove({
+                fromType: sourceInv.type,
+                fromSlot: item.slot,
+                toType: openDrop ? openDrop.type : 'newdrop',
+                toId: openDrop?.id,
+                toSlot: 0,
+                count: dropCount,
+              })
+            );
+          }
         }
         break;
       case 'remove':

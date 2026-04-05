@@ -182,14 +182,40 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
             const moveCount = event.shiftKey && item.count > 1 ? Math.floor(item.count / 2) : item.count;
             const openDrop =
               state.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop');
-            dispatch(validateMove({
-              fromSlot: item.slot,
-              fromType: inventoryType,
-              toSlot: 0,
-              toType: openDrop ? openDrop.type : 'newdrop',
-              toId: openDrop?.id,
-              count: moveCount,
-            }) as any);
+
+            if (openDrop && openDrop.type === 'drop') {
+              const itemSizes = getItemSizes();
+              const size = getItemSize(item.name, itemSizes);
+              const gridW = openDrop.gridWidth ?? 10;
+              const gridH = openDrop.gridHeight ?? 7;
+              const occupancy = buildOccupancyGrid(gridW, gridH, openDrop.items, itemSizes);
+              const fit = findFirstFit(occupancy, gridW, gridH, size.width, size.height);
+              if (!fit) return;
+
+              let maxSlot = 0;
+              for (const i of openDrop.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
+
+              dispatch(validateMove({
+                fromSlot: item.slot,
+                fromType: inventoryType,
+                toSlot: maxSlot + 1,
+                toType: openDrop.type,
+                toId: openDrop.id,
+                toGridX: fit.x,
+                toGridY: fit.y,
+                rotated: fit.rotated,
+                count: moveCount,
+              }) as any);
+            } else {
+              dispatch(validateMove({
+                fromSlot: item.slot,
+                fromType: inventoryType,
+                toSlot: 0,
+                toType: openDrop ? openDrop.type : 'newdrop',
+                toId: openDrop?.id,
+                count: moveCount,
+              }) as any);
+            }
             dispatch(removePlayerItem(item.slot));
             return;
           }
