@@ -20,10 +20,12 @@ export const contextMenuSlice = createSlice({
   name: 'contextMenu',
   initialState,
   reducers: {
-    openContextMenu(state, action: PayloadAction<{ item: SlotWithItem; coords: { x: number; y: number } }>) {
+    openContextMenu(state, action: PayloadAction<{ item: SlotWithItem; coords: { x: number; y: number }; shiftKey?: boolean }>) {
       state.coords = action.payload.coords;
       state.item = action.payload.item;
-      state.splitAmount = action.payload.item.count;
+      state.splitAmount = action.payload.shiftKey && action.payload.item.count > 1
+        ? Math.floor(action.payload.item.count / 2)
+        : action.payload.item.count;
     },
     closeContextMenu(state) {
       state.coords = null;

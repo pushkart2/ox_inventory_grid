@@ -147,7 +147,7 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       if (isUnsearched || isSearching || inventoryType !== 'player' || !isSlotWithItem(item)) return;
-      dispatch(openContextMenu({ item, coords: { x: event.clientX, y: event.clientY } }));
+      dispatch(openContextMenu({ item, coords: { x: event.clientX, y: event.clientY }, shiftKey: event.shiftKey }));
     },
     [item, inventoryType, dispatch]
   );
