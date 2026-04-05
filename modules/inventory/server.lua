@@ -2027,6 +2027,51 @@ local TriggerEventHooks = require 'modules.hooks.server'
 ---@field rotated? boolean
 
 ---@param source number
+---Calculates the weighted average durability when stacking items with different durability values.
+---@param fromData table
+---@param toData table
+---@return number durability
+local function CalculateDurabilityAfterStack(fromData, toData)
+	local durFrom = fromData.metadata.durability
+	local durTo = toData.metadata.durability
+
+	if durFrom <= 100 and durTo <= 100 then
+		if durFrom < 0 then durFrom = 0 end
+		if durTo < 0 then durTo = 0 end
+		return ((durFrom * fromData.count) + (durTo * toData.count)) / (fromData.count + toData.count)
+	else
+		-- Degrade-based durability (timestamp values > 100)
+		durFrom = ((durFrom - os.time()) / (fromData.metadata.degrade * 60)) * 100
+		durTo = ((durTo - os.time()) / (toData.metadata.degrade * 60)) * 100
+		if durFrom < 0 then durFrom = 0 end
+		if durTo < 0 then durTo = 0 end
+
+		local durability = ((durFrom * fromData.count) + (durTo * toData.count)) / (fromData.count + toData.count)
+		return math.floor(os.time() + (durability * (fromData.metadata.degrade * 60)) / 100 + 0.5)
+	end
+end
+
+---Checks if two items with the same name can stack despite different durability.
+---Returns true and the averaged durability if metadata matches ignoring durability.
+---@param fromData table
+---@param toData table
+---@return boolean canStack
+---@return number? durability
+local function canStackDurability(fromData, toData)
+	if not fromData.metadata.durability or not toData.metadata.durability then return false end
+
+	local metaFrom = lib.table.deepclone(fromData.metadata)
+	metaFrom.durability = nil
+	local metaTo = lib.table.deepclone(toData.metadata)
+	metaTo.durability = nil
+
+	if table.matches(metaFrom, metaTo) then
+		return true, CalculateDurabilityAfterStack(fromData, toData)
+	end
+
+	return false
+end
+
 ---@param playerInventory OxInventory
 ---@param fromInventory OxInventory
 ---@param fromData SlotWithItem?
@@ -2335,50 +2380,134 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 			}
 
 			if toData and ((toData.name ~= fromData.name) or not toData.stack or (not table.matches(toData.metadata, fromData.metadata))) then
-				local toWeight = not sameInventory and (toInventory.weight - toData.weight + fromData.weight) or 0
-				local fromWeight = not sameInventory and (fromInventory.weight + toData.weight - fromData.weight) or 0
-				hookPayload.action = 'swap'
+				-- Check if items can stack with durability averaging (same name, stackable, metadata matches except durability)
+				local durabilityCanStack, durabilityAvg
+				if toData.name == fromData.name and toData.stack then
+					durabilityCanStack, durabilityAvg = canStackDurability(fromData, toData)
+				end
 
-				if not sameInventory then
-					if (toWeight <= toInventory.maxWeight and fromWeight <= fromInventory.maxWeight) then
+				if durabilityCanStack then
+					-- Stack items with averaged durability
+					local itemDef = Items(toData.name)
+					local stackSize = itemDef and itemDef.stackSize
+
+					if stackSize then
+						local canAdd = stackSize - toData.count
+						if canAdd <= 0 then return end
+						data.count = math.min(data.count, canAdd)
+						hookPayload.count = data.count
+					end
+
+					toData.count += data.count
+					fromData.count -= data.count
+
+					local toSlotWeight = Inventory.SlotWeight(Items(toData.name), toData)
+					local totalWeight = toInventory.weight - toData.weight + toSlotWeight
+
+					if fromInventory.type == 'container' or fromInventory.type == 'backpack' or sameInventory or totalWeight <= toInventory.maxWeight then
+						hookPayload.action = 'stack'
+
+						if not TriggerEventHooks('swapItems', hookPayload) then
+							toData.count -= data.count
+							fromData.count += data.count
+							return
+						end
+
+						local fromSlotWeight = Inventory.SlotWeight(Items(fromData.name), fromData)
+						toData.weight = toSlotWeight
+
+						if not sameInventory then
+							fromInventory.weight = fromInventory.weight - fromData.weight + fromSlotWeight
+							toInventory.weight = totalWeight
+
+							if container then
+								Inventory.ContainerWeight(containerItem, toInventory.type == 'container' and toInventory.weight or fromInventory.weight, playerInventory)
+							end
+
+							if backpackItem then
+								Inventory.ContainerWeight(backpackItem, toInventory.type == 'backpack' and toInventory.weight or fromInventory.weight, playerInventory)
+							end
+
+							if fromOtherPlayer then
+								TriggerClientEvent('ox_inventory:itemNotify', fromInventory.id, { fromData, 'ui_removed', data.count })
+							elseif toOtherPlayer then
+								TriggerClientEvent('ox_inventory:itemNotify', toInventory.id, { toData, 'ui_added', data.count })
+							end
+
+							if server.loglevel > 0 then
+								lib.logger(playerInventory.owner, 'swapSlots', ('%sx %s transferred from "%s" to "%s"'):format(data.count, fromData.name, fromInventory.owner and fromInventory.label or fromInventory.id, toInventory.owner and toInventory.label or toInventory.id))
+							end
+						end
+
+						toData.metadata.durability = durabilityAvg
+						fromData.weight = fromSlotWeight
+					else
+						toData.count -= data.count
+						fromData.count += data.count
+						return false, 'cannot_carry'
+					end
+				else
+					-- Swap items (different name, not stackable, or metadata mismatch beyond durability)
+					local toWeight = not sameInventory and (toInventory.weight - toData.weight + fromData.weight) or 0
+					local fromWeight = not sameInventory and (fromInventory.weight + toData.weight - fromData.weight) or 0
+					hookPayload.action = 'swap'
+
+					if not sameInventory then
+						if (toWeight <= toInventory.maxWeight and fromWeight <= fromInventory.maxWeight) then
+							if not TriggerEventHooks('swapItems', hookPayload) then return end
+
+							if containerItem then
+								local toContainer = toInventory.type == 'container'
+								local whitelist = Items.containers[containerItem.name]?.whitelist
+								local blacklist = Items.containers[containerItem.name]?.blacklist
+								local checkItem = toContainer and fromData.name or toData.name
+
+								if (whitelist and not whitelist[checkItem]) or (blacklist and blacklist[checkItem]) then
+									return
+								end
+
+								Inventory.ContainerWeight(containerItem, toContainer and toWeight or fromWeight, playerInventory)
+							end
+
+							if backpackItem then
+								local toBackpack = toInventory.type == 'backpack'
+								local bpWhitelist = Items.containers[backpackItem.name]?.whitelist
+								local bpBlacklist = Items.containers[backpackItem.name]?.blacklist
+								local bpCheckItem = toBackpack and fromData.name or toData.name
+
+								if (bpWhitelist and not bpWhitelist[bpCheckItem]) or (bpBlacklist and bpBlacklist[bpCheckItem]) then
+									return
+								end
+
+								Inventory.ContainerWeight(backpackItem, toBackpack and toWeight or fromWeight, playerInventory)
+							end
+
+							if fromOtherPlayer then
+								TriggerClientEvent('ox_inventory:itemNotify', fromInventory.id, { fromData, 'ui_removed', fromData.count })
+								TriggerClientEvent('ox_inventory:itemNotify', fromInventory.id, { toData, 'ui_added', toData.count })
+							elseif toOtherPlayer then
+								TriggerClientEvent('ox_inventory:itemNotify', toInventory.id, { fromData, 'ui_added', fromData.count })
+								TriggerClientEvent('ox_inventory:itemNotify', toInventory.id, { toData, 'ui_removed', toData.count })
+							end
+
+							fromInventory.weight = fromWeight
+							toInventory.weight = toWeight
+							toData, fromData = Inventory.SwapSlots(fromInventory, toInventory, data.fromSlot, data.toSlot)
+
+							if data.rotated ~= nil and toData then
+								toData.gridRotated = data.rotated
+							end
+							if data.targetRotated ~= nil and fromData then
+								fromData.gridRotated = data.targetRotated
+							end
+
+							if server.loglevel > 0 then
+								lib.logger(playerInventory.owner, 'swapSlots', ('%sx %s transferred from "%s" to "%s" for %sx %s'):format(fromData.count, fromData.name, fromInventory.owner and fromInventory.label or fromInventory.id, toInventory.owner and toInventory.label or toInventory.id, toData.count, toData.name))
+							end
+						else return false, 'cannot_carry' end
+					else
 						if not TriggerEventHooks('swapItems', hookPayload) then return end
 
-						if containerItem then
-							local toContainer = toInventory.type == 'container'
-							local whitelist = Items.containers[containerItem.name]?.whitelist
-							local blacklist = Items.containers[containerItem.name]?.blacklist
-							local checkItem = toContainer and fromData.name or toData.name
-
-							if (whitelist and not whitelist[checkItem]) or (blacklist and blacklist[checkItem]) then
-								return
-							end
-
-							Inventory.ContainerWeight(containerItem, toContainer and toWeight or fromWeight, playerInventory)
-						end
-
-						if backpackItem then
-							local toBackpack = toInventory.type == 'backpack'
-							local bpWhitelist = Items.containers[backpackItem.name]?.whitelist
-							local bpBlacklist = Items.containers[backpackItem.name]?.blacklist
-							local bpCheckItem = toBackpack and fromData.name or toData.name
-
-							if (bpWhitelist and not bpWhitelist[bpCheckItem]) or (bpBlacklist and bpBlacklist[bpCheckItem]) then
-								return
-							end
-
-							Inventory.ContainerWeight(backpackItem, toBackpack and toWeight or fromWeight, playerInventory)
-						end
-
-						if fromOtherPlayer then
-							TriggerClientEvent('ox_inventory:itemNotify', fromInventory.id, { fromData, 'ui_removed', fromData.count })
-							TriggerClientEvent('ox_inventory:itemNotify', fromInventory.id, { toData, 'ui_added', toData.count })
-						elseif toOtherPlayer then
-							TriggerClientEvent('ox_inventory:itemNotify', toInventory.id, { fromData, 'ui_added', fromData.count })
-							TriggerClientEvent('ox_inventory:itemNotify', toInventory.id, { toData, 'ui_removed', toData.count })
-						end
-
-						fromInventory.weight = fromWeight
-						toInventory.weight = toWeight
 						toData, fromData = Inventory.SwapSlots(fromInventory, toInventory, data.fromSlot, data.toSlot)
 
 						if data.rotated ~= nil and toData then
@@ -2387,21 +2516,6 @@ lib.callback.register('ox_inventory:swapItems', function(source, data)
 						if data.targetRotated ~= nil and fromData then
 							fromData.gridRotated = data.targetRotated
 						end
-
-						if server.loglevel > 0 then
-							lib.logger(playerInventory.owner, 'swapSlots', ('%sx %s transferred from "%s" to "%s" for %sx %s'):format(fromData.count, fromData.name, fromInventory.owner and fromInventory.label or fromInventory.id, toInventory.owner and toInventory.label or toInventory.id, toData.count, toData.name))
-						end
-					else return false, 'cannot_carry' end
-				else
-					if not TriggerEventHooks('swapItems', hookPayload) then return end
-
-					toData, fromData = Inventory.SwapSlots(fromInventory, toInventory, data.fromSlot, data.toSlot)
-
-					if data.rotated ~= nil and toData then
-						toData.gridRotated = data.rotated
-					end
-					if data.targetRotated ~= nil and fromData then
-						fromData.gridRotated = data.targetRotated
 					end
 				end
 
