@@ -1360,9 +1360,6 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
 					local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', dropId, true)
 					if dropRight and dropRight.id then
 						currentInventories[dropRight.id] = dropRight
-						if currentInventory.type == 'newdrop' then
-							currentInventory = dropRight
-						end
 						SendNUIMessage({
 							action = 'addSecondaryInventory',
 							data = dropRight
@@ -1385,6 +1382,35 @@ RegisterNetEvent('ox_inventory:removeDrop', function(dropId)
 			point:remove()
 
 			if point.entity then Utils.DeleteEntity(point.entity) end
+		end
+	end
+
+	if invOpen and currentInventories[dropId] then
+		currentInventories[dropId] = nil
+		SendNUIMessage({ action = 'removeSecondaryInventory', data = dropId })
+
+		-- Restore a newdrop placeholder so the player can still drop items
+		local hasDropPanel = false
+		for _, inv in pairs(currentInventories) do
+			if inv.type == 'drop' or inv.type == 'newdrop' then
+				hasDropPanel = true
+				break
+			end
+		end
+
+		if not hasDropPanel then
+			local dropPlaceholder = {
+				id = 'newdrop',
+				label = locale('drops') or 'Drop',
+				type = 'newdrop',
+				slots = shared.dropslots,
+				weight = 0,
+				maxWeight = shared.dropweight,
+				items = {},
+				gridWidth = shared.gridwidth or 10,
+				gridHeight = shared.gridheight or 7,
+			}
+			SendNUIMessage({ action = 'addSecondaryInventory', data = dropPlaceholder })
 		end
 	end
 end)

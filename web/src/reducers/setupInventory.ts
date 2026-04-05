@@ -111,9 +111,25 @@ export const setupInventoryReducer: CaseReducer<
   }
 
   if (rightInventory) {
-    state.rightInventory = isGridInventory(rightInventory.type)
-      ? setupGridInventory(rightInventory, curTime)
-      : setupSlotInventory(rightInventory, curTime);
+    if (rightInventory.type === 'newdrop') {
+      // Don't put newdrop placeholder in the right panel - add it as an extra inventory instead.
+      // This prevents duplication when an actual drop replaces it (the addExtraInventory reducer
+      // handles drop/newdrop replacement within extraInventories).
+      state.rightInventory = { id: '', type: '', slots: 0, maxWeight: 0, items: [] } as Inventory;
+      const processed = setupGridInventory(rightInventory, curTime);
+      const existingIdx = state.extraInventories.findIndex(
+        (inv) => inv.type === 'drop' || inv.type === 'newdrop'
+      );
+      if (existingIdx !== -1) {
+        state.extraInventories[existingIdx] = processed;
+      } else {
+        state.extraInventories.push(processed);
+      }
+    } else {
+      state.rightInventory = isGridInventory(rightInventory.type)
+        ? setupGridInventory(rightInventory, curTime)
+        : setupSlotInventory(rightInventory, curTime);
+    }
   }
 
   state.shiftPressed = false;
