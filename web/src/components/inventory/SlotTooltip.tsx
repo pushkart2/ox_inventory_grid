@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import { useAppSelector } from '../../store';
 import ClockIcon from '../utils/icons/ClockIcon';
 import { getItemUrl, isSlotWithItem } from '../../helpers';
+import { useImageUrl, handleImageError } from '../../hooks/useImageUrl';
 
 const SlotTooltip: React.ForwardRefRenderFunction<
   HTMLDivElement,
@@ -20,7 +21,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
   const description = item.metadata?.description || itemData?.description;
   const ammoName = itemData?.ammoName && Items[itemData?.ammoName]?.label;
   const itemRarity = itemData?.rarity;
-  const imageUrl = getItemUrl(item) || 'none';
+  const imageUrl = useImageUrl(getItemUrl(item));
 
   const weightDisplay = item.weight > 0
     ? item.weight >= 1000
@@ -132,7 +133,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
             <span className={`tooltip-price-badge${isBlackMoney ? ' tooltip-price-badge--dirty' : ''}`}>
               {isItemCurrency ? (
                 <>
-                  <img src={getItemUrl(item.currency!)} alt="" className="tooltip-price-currency-icon" />
+                  <img src={getItemUrl(item.currency!)} onError={handleImageError} alt="" className="tooltip-price-currency-icon" />
                   {priceDisplay}
                 </>
               ) : (
@@ -268,7 +269,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
               <div className="tooltip-components-list">
                 {(item.metadata.components).map((component: string) => (
                   <div className="tooltip-component-chip" key={component}>
-                    <img src={getItemUrl(component) || 'none'} alt="" />
+                    <img src={getItemUrl(component) || 'none'} onError={handleImageError} alt="" />
                     <span>{Items[component]?.label || component}</span>
                   </div>
                 ))}
@@ -319,7 +320,7 @@ const SlotTooltip: React.ForwardRefRenderFunction<
                 const isSufficient = avail?.sufficient ?? true;
                 return (
                   <div className={`tooltip-ingredient${isSufficient ? ' tooltip-ingredient--available' : ' tooltip-ingredient--missing'}`} key={`ingredient-${ingredientName}`}>
-                    <img src={ingredientName ? getItemUrl(ingredientName) : 'none'} alt="" />
+                    <img src={ingredientName ? getItemUrl(ingredientName) : 'none'} onError={handleImageError} alt="" />
                     <span>
                       {count >= 1
                         ? `${count}x ${Items[ingredientName]?.label || ingredientName}`

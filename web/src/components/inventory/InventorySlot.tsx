@@ -11,6 +11,7 @@ import { onUse } from '../../dnd/onUse';
 import { Locale } from '../../store/locale';
 import { onCraft } from '../../dnd/onCraft';
 import useNuiEvent from '../../hooks/useNuiEvent';
+import { useImageUrl, handleImageError } from '../../hooks/useImageUrl';
 import { ItemsPayload } from '../../reducers/refreshSlots';
 import { closeTooltip, openTooltip } from '../../store/tooltip';
 import { openContextMenu } from '../../store/contextMenu';
@@ -30,6 +31,8 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   const manager = useDragDropManager();
   const dispatch = useAppDispatch();
   const timerRef = useRef<number | null>(null);
+  const rawImageUrl = item?.name ? getItemUrl(item as SlotWithItem) : undefined;
+  const validatedImageUrl = useImageUrl(rawImageUrl);
 
   const canDrag = useCallback(() => {
     return canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) && canCraftItem(item, inventoryType);
@@ -133,7 +136,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             ? 'brightness(80%) grayscale(100%)'
             : undefined,
         opacity: isDragging ? 0.4 : 1.0,
-        backgroundImage: `url(${item?.name ? getItemUrl(item as SlotWithItem) : 'none'}`,
+        backgroundImage: `url(${item?.name ? validatedImageUrl : 'none'}`,
         border: isOver ? '1px dashed rgba(255,255,255,0.4)' : '',
       }}
     >
@@ -184,6 +187,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                   <div className="item-slot-currency-wrapper">
                     <img
                       src={item.currency ? getItemUrl(item.currency) : 'none'}
+                      onError={handleImageError}
                       alt="item-image"
                       style={{
                         imageRendering: '-webkit-optimize-contrast',

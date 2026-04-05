@@ -1360,6 +1360,9 @@ RegisterNetEvent('ox_inventory:createDrop', function(dropId, data, owner, slot)
 					local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', dropId, true)
 					if dropRight and dropRight.id then
 						currentInventories[dropRight.id] = dropRight
+						if currentInventory.type == 'newdrop' then
+							currentInventory = dropRight
+						end
 						SendNUIMessage({
 							action = 'addSecondaryInventory',
 							data = dropRight

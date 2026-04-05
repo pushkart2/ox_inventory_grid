@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { getItemUrl, isSlotWithItem } from '../../helpers';
+import { useImageUrl } from '../../hooks/useImageUrl';
 import useNuiEvent from '../../hooks/useNuiEvent';
 import { Items } from '../../store/items';
 import WeightBar from '../utils/WeightBar';
 import { useAppSelector } from '../../store';
 import { selectLeftInventory, selectHotbar } from '../../store/inventory';
 import SlideUp from '../utils/transitions/SlideUp';
+
+const HotbarImage: React.FC<{ item: import('../../typings').SlotWithItem }> = ({ item }) => {
+  const imageUrl = useImageUrl(getItemUrl(item));
+  return <div className="hotbar-slot-image" style={{ backgroundImage: `url(${imageUrl})` }} />;
+};
 
 const InventoryHotbar: React.FC = () => {
   const [hotbarVisible, setHotbarVisible] = useState(false);
@@ -42,7 +48,7 @@ const InventoryHotbar: React.FC = () => {
               >
                 {item ? (
                   <>
-                    <div className="hotbar-slot-image" style={{ backgroundImage: `url(${getItemUrl(item)})` }} />
+                    <HotbarImage item={item} />
                     <div className="hotbar-slot-key">{index + 1}</div>
                     {item.count > 1 && (
                       <div className="hotbar-slot-meta">

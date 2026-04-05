@@ -5,6 +5,7 @@ import useNuiEvent from '../../hooks/useNuiEvent';
 import useQueue from '../../hooks/useQueue';
 import { Locale } from '../../store/locale';
 import { getItemUrl } from '../../helpers';
+import { useImageUrl } from '../../hooks/useImageUrl';
 import { SlotWithItem } from '../../typings';
 import { Items } from '../../store/items';
 import Fade from './transitions/Fade';
@@ -29,10 +30,11 @@ const ItemNotification = React.forwardRef(
   (props: { item: ItemNotificationProps; style?: React.CSSProperties }, ref: React.ForwardedRef<HTMLDivElement>) => {
     const slotItem = props.item.item;
     const label = slotItem.metadata?.label || Items[slotItem.name]?.label || slotItem.name;
+    const imageUrl = useImageUrl(getItemUrl(slotItem));
 
     return (
       <div className="item-notify" ref={ref} style={props.style}>
-        <div className="item-notify-image" style={{ backgroundImage: `url(${getItemUrl(slotItem) || 'none'})` }} />
+        <div className="item-notify-image" style={{ backgroundImage: `url(${imageUrl})` }} />
         <div className="item-notify-content">
           <span className="item-notify-label">{label}</span>
           <span className="item-notify-action">{props.item.text}</span>

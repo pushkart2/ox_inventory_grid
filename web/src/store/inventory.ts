@@ -242,6 +242,11 @@ export const inventorySlice = createSlice({
       const processed = setupGridInventory(action.payload, curTime);
       // If adding a drop, replace any existing drop/newdrop in-place (only one drop panel at a time)
       if (action.payload.type === 'drop' || action.payload.type === 'newdrop') {
+        // If the right inventory is a newdrop placeholder, replace it with the actual drop
+        if (action.payload.type === 'drop' && state.rightInventory.type === 'newdrop') {
+          state.rightInventory = processed;
+          return;
+        }
         const existingIdx = state.extraInventories.findIndex(
           (inv) => inv.type === 'drop' || inv.type === 'newdrop'
         );

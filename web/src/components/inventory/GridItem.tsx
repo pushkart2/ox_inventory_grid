@@ -6,6 +6,7 @@ import { store } from '../../store';
 import { setDragRotated, gridMoveSlots, assignHotbar, clearHotbar, selectPlayerItemCounts, beginItemSearch, finishItemSearch, removePlayerItem } from '../../store/inventory';
 import { Items } from '../../store/items';
 import { getItemUrl, isSlotWithItem, canPurchaseItem, canCraftItem } from '../../helpers';
+import { useImageUrl, handleImageError } from '../../hooks/useImageUrl';
 import { getEffectiveDimensions, buildOccupancyGrid, findFirstFit, getItemSize, getSlotEffectiveSize, getWeaponEffectiveSize, isGridInventory } from '../../helpers/gridUtils';
 import { closeTooltip, openTooltip } from '../../store/tooltip';
 import { openContextMenu, clearSplit } from '../../store/contextMenu';
@@ -259,7 +260,7 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
   const needsCounts = inventoryType === 'shop' || inventoryType === 'crafting';
   const playerItemCounts = useAppSelector(needsCounts ? selectPlayerItemCounts : () => null);
 
-  const imageUrl = getItemUrl(item) || 'none';
+  const imageUrl = useImageUrl(getItemUrl(item));
   const isRotated = item.rotated ?? false;
 
   const canInteract = useMemo(() => {
@@ -398,7 +399,7 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
                 <span className={`grid-item-shop-price${item.currency === 'black_money' ? ' grid-item-shop-price--dirty' : ''}`}>
                   {item.currency && item.currency !== 'money' && item.currency !== 'black_money' ? (
                     <>
-                      <img src={getItemUrl(item.currency)} alt="" className="grid-item-currency-icon" />
+                      <img src={getItemUrl(item.currency)} onError={handleImageError} alt="" className="grid-item-currency-icon" />
                       {item.price.toLocaleString('en-us')}
                     </>
                   ) : (

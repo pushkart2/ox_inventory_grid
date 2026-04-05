@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDrag } from 'react-dnd';
 import { CraftQueueItem } from '../../typings/crafting';
 import { getItemUrl } from '../../helpers';
+import { useImageUrl } from '../../hooks/useImageUrl';
 import { Items } from '../../store/items';
 
 interface Props {
@@ -54,7 +55,7 @@ const CraftQueueCard: React.FC<Props> = ({ item }) => {
     [item]
   );
 
-  const imageUrl = getItemUrl(item.itemName) || 'none';
+  const imageUrl = useImageUrl(getItemUrl(item.itemName));
 
   const progressPercent = useMemo(() => {
     if (item.status === 'done') return 100;

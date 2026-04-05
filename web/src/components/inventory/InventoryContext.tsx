@@ -5,6 +5,7 @@ import { Items } from '../../store/items';
 import { fetchNui } from '../../utils/fetchNui';
 import { Locale } from '../../store/locale';
 import { getItemUrl, isSlotWithItem } from '../../helpers';
+import { useImageUrl, handleImageError } from '../../hooks/useImageUrl';
 import { isGridInventory, buildOccupancyGrid, findFirstFit, getItemSize } from '../../helpers/gridUtils';
 import { setClipboard } from '../../utils/setClipboard';
 import { useAppSelector, useAppDispatch } from '../../store';
@@ -162,7 +163,7 @@ const InventoryContext: React.FC = () => {
     }, []);
   };
 
-  const imageUrl = item ? (getItemUrl(item) || 'none') : 'none';
+  const imageUrl = useImageUrl(item ? getItemUrl(item) : undefined);
   const weightDisplay = item && item.weight > 0
     ? item.weight >= 1000
       ? `${(item.weight / 1000).toLocaleString('en-us', { minimumFractionDigits: 0 })}kg`
@@ -358,7 +359,7 @@ const InventoryContext: React.FC = () => {
                         onClick={() => handleDetachComponent(component)}
                         title={`Remove ${compData?.label || component}`}
                       >
-                        <img src={compImgUrl} alt="" className="ctx-attachment-chip-img" />
+                        <img src={compImgUrl} onError={handleImageError} alt="" className="ctx-attachment-chip-img" />
                         <span className="ctx-attachment-chip-label">{compData?.label || component}</span>
                         <span className="ctx-attachment-chip-x">
                           <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
