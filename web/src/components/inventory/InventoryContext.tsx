@@ -89,6 +89,11 @@ const InventoryContext: React.FC = () => {
           // Find an existing drop/newdrop panel to drop into
           const openDrop = invState.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop');
 
+          console.log('[CTX DROP] extraInventories:', invState.extraInventories.map(inv => ({ id: inv.id, type: inv.type })));
+          console.log('[CTX DROP] openDrop:', openDrop ? { id: openDrop.id, type: openDrop.type, itemCount: openDrop.items.filter(i => i?.name).length } : null);
+          console.log('[CTX DROP] sourceInv:', { id: sourceInv.id, type: sourceInv.type });
+          console.log('[CTX DROP] item:', { name: item.name, slot: item.slot, count: item.count }, 'dropCount:', dropCount);
+
           if (openDrop && openDrop.type === 'drop') {
             const itemSizes = getItemSizes();
             const size = getItemSize(item.name, itemSizes);
