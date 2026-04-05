@@ -4,8 +4,7 @@ import { batch } from 'react-redux';
 import useNuiEvent from '../../hooks/useNuiEvent';
 import InventoryHotbar from './InventoryHotbar';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { store } from '../../store';
-import { refreshSlots, setAdditionalMetadata, setupInventory, restoreHotbar, selectRightInventory, selectBackpackInventory, selectClothingInventory, setupBackpack, closeBackpack, setupClothing, closeClothing, removePlayerItem, removeBackpackItem, clearCraftQueue, addExtraInventory, removeExtraInventory, clearExtraInventories } from '../../store/inventory';
+import { refreshSlots, setAdditionalMetadata, setupInventory, restoreHotbar, selectRightInventory, selectBackpackInventory, selectClothingInventory, setupBackpack, closeBackpack, setupClothing, closeClothing, clearCraftQueue, addExtraInventory, removeExtraInventory, clearExtraInventories } from '../../store/inventory';
 import ExtraInventory from './ExtraInventory';
 import { reconcileHotbar } from '../../helpers/hotbarPersistence';
 import { useExitListener } from '../../hooks/useExitListener';
@@ -22,9 +21,6 @@ import { closeContextMenu } from '../../store/contextMenu';
 import Fade from '../utils/transitions/Fade';
 import UsefulControls from './UsefulControls';
 import { usePanelDrag } from '../../hooks/usePanelDrag';
-import { isSlotWithItem } from '../../helpers';
-import { validateMove } from '../../thunks/validateItems';
-import { fetchNui } from '../../utils/fetchNui';
 
 const Inventory: React.FC = () => {
   const [inventoryVisible, setInventoryVisible] = useState(false);
@@ -140,64 +136,11 @@ const Inventory: React.FC = () => {
   });
   useNuiEvent('removeSecondaryInventory', (id: string) => dispatch(removeExtraInventory(id)));
 
+  // Catch items dropped outside any panel - just cancel the drag (do nothing)
   const [, groundDrop] = useDrop<DragSource, void, {}>(() => ({
     accept: ['GRID_ITEM', 'SLOT'],
-    drop: (source, monitor) => {
-      if (monitor.didDrop()) return;
-
-      const clientOffset = monitor.getClientOffset();
-      if (clientOffset) {
-        const allPanels = document.querySelectorAll('.inventory-panel--active');
-        for (const panel of allPanels) {
-          const rect = panel.getBoundingClientRect();
-          if (
-            clientOffset.x >= rect.left && clientOffset.x <= rect.right &&
-            clientOffset.y >= rect.top && clientOffset.y <= rect.bottom
-          ) {
-            return;
-          }
-        }
-      }
-
-      const { inventory: state } = store.getState();
-
-      let sourceItem;
-      let fromType: string;
-      if (source.inventory === 'backpack' || source.inventoryId === state.backpackInventory.id) {
-        sourceItem = state.backpackInventory.items.find((i) => i != null && i.slot === source.item.slot);
-        fromType = 'backpack';
-      } else {
-        sourceItem = state.leftInventory.items.find((i) => i != null && i.slot === source.item.slot);
-        fromType = 'player';
-      }
-      if (!sourceItem || !isSlotWithItem(sourceItem)) return;
-
-      if (fromType === 'player' && sourceItem.metadata?.isBackpack && state.backpackInventory.id) {
-        fetchNui('closeBackpack');
-        dispatch(closeBackpack());
-      }
-
-      const count = state.shiftPressed && sourceItem.count > 1
-        ? Math.floor(sourceItem.count / 2)
-        : sourceItem.count;
-
-      dispatch(
-        validateMove({
-          fromSlot: sourceItem.slot,
-          fromType,
-          toSlot: 0,
-          toType: 'newdrop',
-          count,
-        }) as any
-      );
-
-      if (fromType === 'backpack') {
-        dispatch(removeBackpackItem(sourceItem.slot));
-      } else {
-        dispatch(removePlayerItem(sourceItem.slot));
-      }
-    },
-  }), [dispatch]);
+    drop: () => {},
+  }), []);
 
   const leftPositioned = leftDrag.position !== null;
   const rightPositioned = rightDrag.position !== null;
