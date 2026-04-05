@@ -116,14 +116,26 @@ export const isSlotWithItem = (slot: Slot, strict: boolean = false): slot is Slo
   ((slot.name !== undefined && slot.weight !== undefined) ||
   (strict && slot.name !== undefined && slot.count !== undefined && slot.weight !== undefined));
 
-export const canStack = (sourceSlot: Slot, targetSlot: Slot) =>
-  sourceSlot.name === targetSlot.name && isEqual(sourceSlot.metadata, targetSlot.metadata);
+export const canStack = (sourceSlot: Slot, targetSlot: Slot) => {
+  if (sourceSlot.name !== targetSlot.name) return false;
+  if (isEqual(sourceSlot.metadata, targetSlot.metadata)) return true;
+
+  // Allow stacking items with different durability if all other metadata matches
+  if (sourceSlot.metadata?.durability != null && targetSlot.metadata?.durability != null) {
+    const { durability: _a, ...sourceMeta } = sourceSlot.metadata;
+    const { durability: _b, ...targetMeta } = targetSlot.metadata;
+    return isEqual(sourceMeta, targetMeta);
+  }
+
+  return false;
+};
 
 export const findAvailableSlot = (item: Slot, data: ItemData, items: Slot[]) => {
   if (!data.stack) return items.find((target) => target.name === undefined);
 
   const stackableSlot = items.find((target) => {
-    if (target.name !== item.name || !isEqual(target.metadata, item.metadata)) return false;
+    if (!target.name || target.name !== item.name) return false;
+    if (!canStack(item, target)) return false;
     if (data.stackSize && (target.count ?? 0) >= data.stackSize) return false;
     return true;
   });
