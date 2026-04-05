@@ -181,7 +181,8 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
           } else {
             const moveCount = event.shiftKey && item.count > 1 ? Math.floor(item.count / 2) : item.count;
             const openDrop =
-              state.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop');
+              state.extraInventories.find((inv) => inv.type === 'drop' || inv.type === 'newdrop')
+              || (state.rightInventory.type === 'drop' ? state.rightInventory : null);
 
             if (openDrop && openDrop.type === 'drop') {
               const itemSizes = getItemSizes();
