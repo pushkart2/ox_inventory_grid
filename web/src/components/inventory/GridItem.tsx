@@ -194,10 +194,12 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
 
               let maxSlot = 0;
               for (const i of openDrop.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
+              for (const i of state.leftInventory.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
 
               dispatch(validateMove({
                 fromSlot: item.slot,
                 fromType: inventoryType,
+                fromId: state.leftInventory.id,
                 toSlot: maxSlot + 1,
                 toType: openDrop.type,
                 toId: openDrop.id,
@@ -210,6 +212,7 @@ const GridItem: React.FC<GridItemProps> = ({ item, inventoryType, inventoryId, i
               dispatch(validateMove({
                 fromSlot: item.slot,
                 fromType: inventoryType,
+                fromId: state.leftInventory.id,
                 toSlot: 0,
                 toType: openDrop ? openDrop.type : 'newdrop',
                 toId: openDrop?.id,

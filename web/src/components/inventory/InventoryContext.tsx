@@ -100,10 +100,12 @@ const InventoryContext: React.FC = () => {
 
             let maxSlot = 0;
             for (const i of openDrop.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
+            for (const i of sourceInv.items) if (i != null && typeof i.slot === 'number' && i.slot > maxSlot) maxSlot = i.slot;
 
             dispatch(
               validateMove({
                 fromType: sourceInv.type,
+                fromId: sourceInv.id,
                 fromSlot: item.slot,
                 toSlot: maxSlot + 1,
                 toType: openDrop.type,
@@ -118,6 +120,7 @@ const InventoryContext: React.FC = () => {
             dispatch(
               validateMove({
                 fromType: sourceInv.type,
+                fromId: sourceInv.id,
                 fromSlot: item.slot,
                 toType: openDrop ? openDrop.type : 'newdrop',
                 toId: openDrop?.id,
