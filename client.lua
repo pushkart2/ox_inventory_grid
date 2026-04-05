@@ -1009,13 +1009,16 @@ local function registerCommands()
 			local closest = lib.points.getClosestPoint()
 
 			if closest and closest.currentDistance < 1.2 and (not closest.instance or closest.instance == currentInstance) then
+				print(('[KEYBIND] closest point: inv=%s, invId=%s, dist=%.2f'):format(tostring(closest.inv), tostring(closest.invId), closest.currentDistance))
 				if closest.inv == 'crafting' then
 					return client.openInventory('crafting', { id = closest.id, index = closest.index })
 				elseif closest.inv ~= 'license' and closest.inv ~= 'policeevidence' then
+					print(('[KEYBIND] opening as: %s'):format(closest.inv or 'drop'))
 					return client.openInventory(closest.inv or 'drop', { id = closest.invId, type = closest.type })
 				end
 			end
 
+			print('[KEYBIND] no closest point, opening plain inventory')
 			return client.openInventory()
 		end
 	})
