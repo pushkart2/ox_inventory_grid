@@ -1321,6 +1321,14 @@ function Inventory.AddItem(inv, item, count, metadata, slot, cb)
 			if not item.stackSize or not slotData or (slotData.count + count) <= item.stackSize then
 				toSlot = slot
 			end
+		elseif slotData and item.stack and slotData.name == item.name and slotMetadata.durability then
+			local durCanStack, durability = canStackDurability({metadata = slotData.metadata or {}, count = slotData.count}, {metadata = slotMetadata or {}, count = slotCount})
+			if durCanStack then
+				if not item.stackSize or (slotData.count + count) <= item.stackSize then
+					slotMetadata.durability = durability
+					toSlot = slot
+				end
+			end
 		end
 	end
 
@@ -1335,10 +1343,21 @@ function Inventory.AddItem(inv, item, count, metadata, slot, cb)
 			local stackSize = item.stack and item.stackSize or nil
 
 			for k, slotData in pairs(items) do
-				if item.stack and slotData and slotData.name == item.name and table.matches(slotData.metadata, slotMetadata) then
-					if not stackSize or (slotData.count + count) <= stackSize then
-						toSlot = k
-						break
+				if item.stack and slotData and slotData.name == item.name then
+					if table.matches(slotData.metadata, slotMetadata) then
+						if not stackSize or (slotData.count + count) <= stackSize then
+							toSlot = k
+							break
+						end
+					elseif slotMetadata.durability then
+						local durCanStack, durability = canStackDurability({metadata = slotData.metadata or {}, count = slotData.count}, {metadata = slotMetadata or {}, count = slotCount})
+						if durCanStack then
+							if not stackSize or (slotData.count + count) <= stackSize then
+								slotMetadata.durability = durability
+								toSlot = k
+								break
+							end
+						end
 					end
 				end
 			end
@@ -1456,10 +1475,21 @@ function Inventory.AddItem(inv, item, count, metadata, slot, cb)
 			for i = 1, inv.slots do
 				local slotData = items[i]
 
-				if item.stack and slotData ~= nil and slotData.name == item.name and table.matches(slotData.metadata, slotMetadata) then
-					if not stackSize or (slotData.count + count) <= stackSize then
-						toSlot = i
-						break
+				if item.stack and slotData ~= nil and slotData.name == item.name then
+					if table.matches(slotData.metadata, slotMetadata) then
+						if not stackSize or (slotData.count + count) <= stackSize then
+							toSlot = i
+							break
+						end
+					elseif slotMetadata.durability then
+						local durCanStack, durability = canStackDurability({metadata = slotData.metadata or {}, count = slotData.count}, {metadata = slotMetadata or {}, count = slotCount})
+						if durCanStack then
+							if not stackSize or (slotData.count + count) <= stackSize then
+								slotMetadata.durability = durability
+								toSlot = i
+								break
+							end
+						end
 					end
 				elseif not item.stack and not slotData then
 					if not toSlot then toSlot = {} end
@@ -1485,12 +1515,22 @@ function Inventory.AddItem(inv, item, count, metadata, slot, cb)
 					if remaining <= 0 then break end
 					local slotData = items[i]
 
-					if slotData and slotData.name == item.name and table.matches(slotData.metadata, slotMetadata) then
-						local canAdd = stackSize - slotData.count
-						if canAdd > 0 then
-							local addCount = math.min(remaining, canAdd)
-							toSlot[#toSlot + 1] = { slot = i, count = addCount, metadata = slotMetadata }
-							remaining = remaining - addCount
+					if slotData and slotData.name == item.name then
+						local metaMatch = table.matches(slotData.metadata, slotMetadata)
+						if not metaMatch and slotMetadata.durability then
+							local durCanStack, durability = canStackDurability({metadata = slotData.metadata or {}, count = slotData.count}, {metadata = slotMetadata or {}, count = remaining})
+							if durCanStack then
+								metaMatch = true
+								slotMetadata.durability = durability
+							end
+						end
+						if metaMatch then
+							local canAdd = stackSize - slotData.count
+							if canAdd > 0 then
+								local addCount = math.min(remaining, canAdd)
+								toSlot[#toSlot + 1] = { slot = i, count = addCount, metadata = slotMetadata }
+								remaining = remaining - addCount
+							end
 						end
 					elseif not slotData and remaining > 0 then
 						local newSlotCount = math.min(remaining, stackSize)
