@@ -125,10 +125,6 @@ local function openInventory(source, invType, data, ignoreSecurityChecks, addToE
 
     if not left then return end
 
-    print(('[multi-inv:server] openInventory called: source=%s, invType=%s, addToExisting=%s, currentOpen=%s'):format(
-        tostring(source), tostring(invType), tostring(addToExisting), tostring(left.open)
-    ))
-
     if invType == 'player' and data == source then
         data = nil
     end
@@ -142,10 +138,7 @@ local function openInventory(source, invType, data, ignoreSecurityChecks, addToE
     end
 
     if not addToExisting then
-        print(('[multi-inv:server] closing existing inventory before opening new one'))
         left:closeInventory(true, true)
-    else
-        print(('[multi-inv:server] addToExisting=true, skipping closeInventory'))
     end
 	Inventory.CloseAll(left, source)
 

@@ -237,12 +237,7 @@ export const inventorySlice = createSlice({
       if (item) item.searched = true;
     },
     addExtraInventory: (state, action: PayloadAction<Inventory>) => {
-      console.log('[addExtraInventory] incoming:', { id: action.payload.id, type: action.payload.type });
-      console.log('[addExtraInventory] current extras:', state.extraInventories.map(inv => ({ id: inv.id, type: inv.type })));
-      if (state.extraInventories.some((inv) => inv.id === action.payload.id)) {
-        console.log('[addExtraInventory] SKIPPED - duplicate id');
-        return;
-      }
+      if (state.extraInventories.some((inv) => inv.id === action.payload.id)) return;
       const curTime = Date.now();
       const processed = setupGridInventory(action.payload, curTime);
       // If adding a drop, replace any existing drop/newdrop in-place (only one drop panel at a time)
@@ -251,12 +246,10 @@ export const inventorySlice = createSlice({
           (inv) => inv.type === 'drop' || inv.type === 'newdrop'
         );
         if (existingIdx !== -1) {
-          console.log('[addExtraInventory] REPLACING existing at index', existingIdx, 'with', { id: processed.id, type: processed.type });
           state.extraInventories[existingIdx] = processed;
           return;
         }
       }
-      console.log('[addExtraInventory] PUSHING new entry');
       state.extraInventories.push(processed);
     },
     removeExtraInventory: (state, action: PayloadAction<string>) => {

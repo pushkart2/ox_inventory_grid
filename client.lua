@@ -398,7 +398,6 @@ function client.openInventory(inv, data)
 
     -- Show a drop panel (nearby existing drop or empty placeholder)
     -- Skip only if the right inventory is already a drop (opened explicitly via openInventory('drop'))
-    print(('[DROP DETECT] currentInventory.type=%s, client.drops exists=%s'):format(currentInventory.type, client.drops ~= nil))
     if currentInventory.type ~= 'drop' then
         local playerCoords = GetEntityCoords(playerPed)
         local nearbyDrop = nil
@@ -409,7 +408,6 @@ function client.openInventory(inv, data)
             for dropId, point in pairs(client.drops) do
                 if point.coords then
                     local dist = #(playerCoords - point.coords)
-                    print(('[DROP DETECT] checking drop %s, dist=%.2f'):format(dropId, dist))
                     if dist < closestDist then
                         closestDist = dist
                         nearbyDrop = dropId
@@ -417,17 +415,14 @@ function client.openInventory(inv, data)
                 end
             end
         end
-        print(('[DROP DETECT] nearbyDrop=%s'):format(nearbyDrop or 'nil'))
         if nearbyDrop then
             -- Open existing nearby drop as extra panel
             local _, dropRight = lib.callback.await('ox_inventory:openInventory', false, 'drop', nearbyDrop, true)
-            print(('[DROP DETECT] opened drop, got id=%s type=%s'):format(dropRight and dropRight.id or 'nil', dropRight and dropRight.type or 'nil'))
             if dropRight and dropRight.id then
                 currentInventories[dropRight.id] = dropRight
                 SendNUIMessage({ action = 'addSecondaryInventory', data = dropRight })
             end
         elseif currentInventory.type ~= 'newdrop' then
-            print('[DROP DETECT] sending newdrop placeholder')
             -- Show empty newdrop placeholder (skip if setupInventory already added one)
             local dropPlaceholder = {
                 id = 'newdrop',
@@ -441,11 +436,7 @@ function client.openInventory(inv, data)
                 gridHeight = shared.gridheight or 7,
             }
             SendNUIMessage({ action = 'addSecondaryInventory', data = dropPlaceholder })
-        else
-            print('[DROP DETECT] skipping placeholder (setupInventory already added newdrop)')
         end
-    else
-        print('[DROP DETECT] SKIPPED - currentInventory is drop')
     end
 
     if not currentInventory.coords and not inv == 'container' then
@@ -1009,16 +1000,13 @@ local function registerCommands()
 			local closest = lib.points.getClosestPoint()
 
 			if closest and closest.currentDistance < 1.2 and (not closest.instance or closest.instance == currentInstance) then
-				print(('[KEYBIND] closest point: inv=%s, invId=%s, dist=%.2f'):format(tostring(closest.inv), tostring(closest.invId), closest.currentDistance))
 				if closest.inv == 'crafting' then
 					return client.openInventory('crafting', { id = closest.id, index = closest.index })
 				elseif closest.inv ~= 'license' and closest.inv ~= 'policeevidence' then
-					print(('[KEYBIND] opening as: %s'):format(closest.inv or 'drop'))
 					return client.openInventory(closest.inv or 'drop', { id = closest.invId, type = closest.type })
 				end
 			end
 
-			print('[KEYBIND] no closest point, opening plain inventory')
 			return client.openInventory()
 		end
 	})
