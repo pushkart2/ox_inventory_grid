@@ -1171,6 +1171,17 @@ end
 RegisterNetEvent('ox_inventory:closeInventory', client.closeInventory)
 exports('closeInventory', client.closeInventory)
 
+RegisterNetEvent('ox_inventory:closeSpecificInventory', function(_invType, invId)
+	if not invOpen then return end
+
+	if currentInventories[invId] then
+		currentInventories[invId] = nil
+	end
+
+	SendNUIMessage({ action = 'removeSecondaryInventory', data = invId })
+	TriggerServerEvent('ox_inventory:closeSpecificInventory', invId)
+end)
+
 ---@param data updateSlot[]
 ---@param weight number
 local function updateInventory(data, weight)
